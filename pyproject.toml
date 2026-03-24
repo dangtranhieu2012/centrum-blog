@@ -1,0 +1,26 @@
+[project]
+name = "centrum-blog"
+version = "0.1.0"
+description = "Simple markdown git triggered blog"
+readme = "README.md"
+authors = [
+    { name = "Hieu Tran Dang" }
+]
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=3.1.3",
+    "gitpython>=3.1.46",
+    "mistune>=3.2.0",
+    "oci>=2.168.2",
+    "oracledb>=3.4.2",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.11.0",
+    "pygments>=2.19.2",
+]
+
+[project.scripts]
+centrum-blog = "centrum_blog:main"
+
+[build-system]
+requires = ["uv_build>=0.10.12,<0.11.0"]
+build-backend = "uv_build"
