@@ -42,7 +42,7 @@ def read(article_id: str):
         with metadata_file.open() as f:
             metadata = json.load(f)
 
-        published = dt.date.fromtimestamp(metadata_file.stat().st_birthtime)
+        published = dt.date.fromtimestamp(metadata_file.stat().st_mtime)
 
         author = metadata["author"]
         author_metadata_file = static_path / f"authors/{metadata['author']}/metadata.json"
