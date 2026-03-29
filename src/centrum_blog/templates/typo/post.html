@@ -1,271 +1,53 @@
-<!DOCTYPE html>
-
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>The Reluctant Technical Blogger</title>
-  <!-- Bulma CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css" rel="stylesheet"/>
-  <link href="{{ url_for('static', filename='styles/code-hili.css') }}" rel="stylesheet"/>
-  <!-- Material Symbols -->
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400..700;1,400..700&amp;family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;display=swap" rel="stylesheet"/>
-  <style>
-    :root {
-      --bulma-primary: #1a1a1a;
-      --bulma-body-family: 'Gelasio', serif;
-      --bulma-title-family: 'Newsreader', serif;
-      --bulma-background: #f9f9f9;
-      --text-main: #2d3435;
-      --text-muted: #5a6061;
-    }
-    body {
-      background-color: var(--bulma-background);
-      color: var(--text-main);
-      font-family: var(--bulma-body-family);
-    }
-    .title, .subtitle, h1, h2, h3, h4, h5, h6 {
-      font-family: 'Newsreader', serif !important;
-      font-weight: 300;
-      color: var(--bulma-primary) !important;
-    }
-    .is-italic-title {
-      font-style: italic;
-      font-family: 'Newsreader', serif !important;
-    }
-
-    .tags-list {
-      gap: 0.75rem;
-      font-family: 'Inter', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-      font-weight: 700;
-      font-size: 0.65rem;
-    }
-
-    .tag-item {
-      background-color: #f0f0f0;
-      padding: 0.4rem 0.8rem;
-      border-radius: 0.25rem;
-      color: #555;
-    }
-
-    .navbar {
-      background-color: rgba(255, 255, 255, 0.8) !important;
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      padding: 1.5rem 2rem;
-    }
-    .navbar-brand .navbar-item {
-      font-family: 'Newsreader', serif;
-      font-style: italic;
-      font-size: 1.5rem;
-      color: var(--text-main);
-    }
-    .navbar-brand .navbar-item:hover, .navbar-brand .navbar-item:focus, .navbar-brand .navbar-item:active {
-      background-color: transparent !important;
-      color: var(--text-main) !important;
-      text-decoration: none !important;
-    }
-    .navbar-link-custom {
-      font-family: 'Inter', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-      font-size: 0.65rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      padding: 0.5rem 1.5rem;
-      transition: color 0.3s ease;
-    }
-    .navbar-link-custom:hover { color: var(--text-main); }
-    .navbar-link-custom.is-active {
-      color: var(--text-main);
-      border-bottom: 1px solid var(--text-main);
-    }
-
-    /* Article Styling */
-    .content blockquote {
-      font-family: 'Newsreader', serif;
-      font-style: italic;
-      font-size: 1.5rem;
-      border-left: none;
-      padding: 3rem 0;
-      text-align: center;
-      color: #5f5e5e;
-    }
-    pre {
-      background-color: #f2f4f4;
-      border-left: 4px solid #5f5e5e;
-      padding: 2rem;
-      border-radius: 0;
-    }
-    code {
-      font-family: 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
-      background-color: #f2f4f4;
-      color: var(--bulma-primary) !important;
-      padding: 0.2em 0.4em;
-    }
-    pre code {
-      background-color: transparent;
-      padding: 0;
-      color: var(--bulma-primary) !important;
-    }
-    .article-container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-    .dropcap::first-letter {
-      font-family: 'Newsreader', serif;
-      font-size: 5rem;
-      float: left;
-      line-height: 1;
-      padding-right: 0.5rem;
-      margin-top: 0.2rem;
-    }
-    .meta-label {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-      font-weight: 700;
-      color: #757c7d;
-    }
-    .featured-image-container {
-      margin-left: -2rem;
-      margin-right: -2rem;
-    }
-    .featured-image {
-      filter: grayscale(100%) brightness(95%);
-      width: 100%;
-    }
-    .comment-input-box {
-      background-color: #f2f4f4;
-      padding: 2rem;
-    }
-    .article-nav {
-      border-top: 1px solid #eee;
-      padding-top: 3rem;
-      margin-top: 5rem;
-    }
-    .author-section {
-      border-top: 1px solid #eee;
-      border-bottom: 1px solid #eee;
-      padding: 2rem 0;
-      margin: 2rem 0;
-    }
-
-    .footer-custom {
-      background-color: #f4f4f4;
-      padding: 3rem 2rem;
-      margin-top: 6rem;
-    }
-    .footer-text {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.75rem;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-    .footer-link {
-      font-size: 0.75rem;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-left: 2rem;
-      transition: transform 0.2s ease;
-      display: inline-block;
-    }
-    .footer-link:hover { color: var(--text-main); transform: scale(0.95); }
-  </style>
-</head>
-<body>
-  <nav aria-label="main navigation" class="navbar is-fixed-top" role="navigation">
-    <div class="container">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="#">The Reluctant Technical Blogger</a>
-        <a aria-expanded="false" aria-label="menu" class="navbar-burger" data-target="navbarMenu" role="button">
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
+{% extends "typo/base.html" %} {% block content %}
+<section class="section" style="padding-top: 8.5rem">
+  <div class="container article-container">
+    <!-- Header -->
+    <header class="mb-6">
+      <div class="is-flex is-align-items-center mb-5 tags-list">
+        {% for tag in tags %}
+        <span class="tag-item">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      <h1 class="title is-size-1 is-italic-title mb-6">{{ title }}</h1>
+      <div class="author-section is-flex is-align-items-center">
+        <figure class="image is-40x40 mr-4">
+          <div
+            class="has-background-grey-lighter is-rounded is-flex is-justify-content-center is-align-items-center"
+            style="width: 40px; height: 40px; border-radius: 50%"
+          >
+            <img
+              class="w-full h-full object-cover is-rounded"
+              data-alt="Close up portrait of the author"
+              src="{{ url_for('static', filename='content/images/' + author_avatar) }}"
+            />
+          </div>
+        </figure>
+        <div>
+          <p class="meta-label" style="font-size: 0.6rem">{{ author }}</p>
+          <p class="is-size-7 has-text-grey">{{ published.strftime("%b %d, %Y") }}</p>
+        </div>
+      </div>
+    </header>
+    <!-- Article Body -->
+    <div class="content is-medium dropcap">{{ body | safe }}</div>
+    <!-- Article Navigation -->
+    <nav class="columns article-nav mt-6">
+      {% if previous_article %}
+      <div class="column">
+        <a class="has-text-dark" href="{{ previous_article.article_path.name }}">
+          <span class="meta-label is-block mb-2">Previous</span>
+          <span class="is-size-4 is-italic-title">{{ previous_article.title }}</span>
         </a>
       </div>
-      <div class="navbar-menu" id="navbarMenu">
-        <div class="navbar-end">
-          <div class="navbar-item is-hidden-touch" style="gap: 3rem;">
-            <a class="navbar-link-custom" href="#">Home</a>
-            <a class="navbar-link-custom" href="#">About</a>
-          </div>
-        </div>
+      {% endif %} {% if next_article %}
+      <div class="column has-text-right" style="border-left: 1px solid #eee">
+        <a class="has-text-dark" href="{{ next_article.article_path.name }}">
+          <span class="meta-label is-block mb-2">Next Article</span>
+          <span class="is-size-4 is-italic-title">{{ next_article.title }}</span>
+        </a>
       </div>
-    </div>
-  </nav>
-  <!-- Main Content -->
-  <section class="section" style="margin-top: 6rem;">
-    <div class="container article-container">
-      <!-- Header -->
-      <header class="mb-6">
-        <div class="is-flex is-align-items-center mb-5 tags-list">
-          {% for tag in tags %}
-          <span class="tag-item">{{ tag }}</span>
-          {% endfor %}
-        </div>
-        <h1 class="title is-size-1 is-italic-title mb-6">{{ title }}</h1>
-        <div class="author-section is-flex is-align-items-center">
-          <figure class="image is-40x40 mr-4">
-            <div class="has-background-grey-lighter is-rounded is-flex is-justify-content-center is-align-items-center" style="width: 40px; height: 40px; border-radius: 50%;">
-              <img class="w-full h-full object-cover is-rounded" data-alt="Close up portrait of the author" src="{{ url_for('static', filename='content/images/' + author_avatar) }}"/>
-            </div>
-          </figure>
-          <div>
-            <p class="meta-label" style="font-size: 0.6rem;">{{ author }}</p>
-            <p class="is-size-7 has-text-grey">{{ published.strftime("%b %d, %Y") }}</p>
-          </div>
-        </div>
-      </header>
-      <!-- Article Body -->
-      <div class="content is-medium dropcap">
-      {{ body | safe }}
-      </div>
-      <!-- Article Navigation -->
-      <nav class="columns article-nav mt-6">
-        <div class="column">
-          <a class="has-text-dark" href="#">
-            <span class="meta-label is-block mb-2">Previous</span>
-            <span class="is-size-4 is-italic-title">The Geometry of Silence</span>
-          </a>
-        </div>
-        <div class="column has-text-right" style="border-left: 1px solid #eee;">
-          <a class="has-text-dark" href="#">
-            <span class="meta-label is-block mb-2">Next Article</span>
-            <span class="is-size-4 is-italic-title">Archiving the Digital Ephemeral</span>
-          </a>
-        </div>
-      </nav>
-    </div>
-  </section>
-  <footer class="footer-custom">
-    <div class="container is-max-w-7xl">
-      <div class="level">
-        <div class="level-left">
-          <p class="footer-text">© {{ now.year }} by Tran Hieu Dang. Licensed under CC BY 4.0.</p>
-        </div>
-      </div>
-    </div>
-  </footer>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
-      if ($navbarBurgers.length > 0) {
-        $navbarBurgers.forEach( el => {
-          el.addEventListener('click', () => {
-            const target = el.dataset.target;
-            const $target = document.getElementById(target);
-            el.classList.toggle('is-active');
-            $target.classList.toggle('is-active');
-          });
-        });
-      }
-    });
-  </script>
-</body>
-</html>
+      {% endif %}
+    </nav>
+  </div>
+</section>
+{% endblock %}

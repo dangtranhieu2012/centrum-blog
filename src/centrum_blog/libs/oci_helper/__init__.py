@@ -31,7 +31,7 @@ def get_config() -> dict:
             logger.error("OCI config file or API key file not found.")
             return {}
         except oci.config.config.ConfigErrors as e:
-            logger.error(f"Error loading OCI config profile '{OCI_USER_PROFILE}': {e}")
+            logger.error(f"Error loading OCI config profile '{profile_name}': {e}")
             return {}
         except Exception as e:
             logger.error(f"An unexpected error occurred while getting OCI config: {e}")
@@ -73,7 +73,7 @@ def get_client(client_initializer: Callable, **kwargs):
     config_or_signer = get_config_or_signer()
 
     if config_or_signer is None:
-        raise ConfigException("Cannot find a valid configuration to authenticate with OCI")
+        raise AuthConfigException("Cannot find a valid configuration to authenticate with OCI")
 
     try:
         client = None

@@ -1,31 +1,77 @@
 import datetime as dt
 import hmac
+import importlib
 import json
 import logging
 import mistune
 import re
-import shutil
 
-from centrum_blog.libs import indexer
+from centrum_blog.libs import article, indexer
 
 from pathlib import Path
+from centrum_blog.constants import static_content_path
+from centrum_blog.libs import article
 from centrum_blog.libs.oci_helper.vault import get_secret
 from centrum_blog.libs.settings import settings
-from centrum_blog.markdown_renderer import MarkdownRenderer
 
 from flask import Flask, abort, render_template, request
+from flask.json import jsonify
 
 
 app = Flask(__name__)
-static_content_path = "src/centrum_blog/static/content"
 
 log_level = getattr(logging, settings.log_level.upper())
 logging.basicConfig(level=log_level)
 logger = logging.getLogger(__name__)
 
+renderer = importlib.import_module(f"centrum_blog.templates.{settings.template}.markdown_renderer").MarkdownRenderer
+
 
 def sanitize_name(name: str):
     return re.sub(r"[^a-zA-Z0-9\-_]", "-", name)
+
+
+def generate_pagination(current_page: int, total_pages: int) -> list[int | str]:
+    pagination = []
+
+    max_page = min(current_page + 2, total_pages)
+    min_page = max(current_page - 2, 1)
+
+    if min_page > 1:
+        pagination.append("ellipsis")
+
+    for i in range(min_page, max_page + 1):
+        pagination.append(i)
+
+    if max_page < total_pages:
+        pagination.append("ellipsis")
+
+    return pagination
+
+
+@app.route("/")
+@app.route("/<int:page>")
+def index(page: int = 1):
+    per_page = request.cookies.get("per_page", "10")
+    if per_page not in ["10", "20"]:
+        per_page = "10"
+
+    total_pages = article.get_total_pages(int(per_page))
+    if page == 0:
+        page = total_pages
+    elif page > total_pages:
+        abort(404)
+
+    articles = article.get_articles_list(page=page, per_page=int(per_page))
+
+    return render_template(
+        f"{settings.template}/index.html",
+        now=dt.date.today(),
+        per_page=per_page,
+        articles=articles,
+        current_page=page,
+        pages=generate_pagination(page, article.get_total_pages(int(per_page))),
+    )
 
 
 @app.route("/read/<article_id>")
@@ -33,50 +79,49 @@ def read(article_id: str):
     article_id = sanitize_name(article_id)
 
     try:
-        static_path = Path(static_content_path)
+        metadata = article.get_article_metadata(article_id)
 
-        article_path = static_path / "posts" / article_id
-
-        metadata_file = article_path / "metadata.json"
-        metadata = {}
-        with metadata_file.open() as f:
-            metadata = json.load(f)
-
-        published = dt.date.fromtimestamp(metadata_file.stat().st_mtime)
-
-        author = metadata["author"]
-        author_metadata_file = static_path / f"authors/{metadata['author']}/metadata.json"
+        author_metadata_file = Path(static_content_path) / f"authors/{metadata['author']}/metadata.json"
         author_metadata = {}
         with author_metadata_file.open() as f:
             author_metadata = json.load(f)
 
         body = ""
-        markdown = mistune.create_markdown(renderer=MarkdownRenderer(article_id))
-        content_file = article_path / "content.md"
+        markdown = mistune.create_markdown(renderer=renderer(article_id))
+        content_file = metadata["article_path"] / "content.md"
         with content_file.open() as f:
             body = markdown(f.read())
 
+        adjacent_articles = article.get_adjacent_articles(article_id)
+
         return render_template(
-            "typo/post.html",
+            f"{settings.template}/post.html",
             now=dt.date.today(),
-            published=published,
+            published=metadata["published"],
             author=author_metadata["name"],
             author_avatar=author_metadata["avatar"],
             title=metadata["title"],
             tags=metadata["tags"],
             body=body,
+            previous_article=adjacent_articles[0],
+            next_article=adjacent_articles[1],
         )
     except Exception as e:
         logger.error(e)
         abort(404)
 
 
+@app.route("/about")
+def about():
+    return render_template(
+        f"{settings.template}/about.html",
+        now=dt.date.today(),
+    )
+
+
 @app.post("/reindex")
 def reindex():
-    webhook_secret = get_secret(settings.webhook_secret_ocid)
-
     header_signature = request.headers.get('X-Hub-Signature-256')
-
     if not header_signature:
         return abort(401)
 
@@ -84,9 +129,10 @@ def reindex():
     if sha_name != 'sha256':
         return abort(503)
 
+    webhook_secret = get_secret(settings.webhook_secret_ocid)
     local_signature = hmac.new(webhook_secret.encode(), msg=request.get_data(), digestmod='sha256')
     if hmac.compare_digest(local_signature.hexdigest(), signature):
         indexer.reindex(static_content_path)
-        return "OK"
+        return jsonify({"status": "OK"})
     else:
         return abort(401)

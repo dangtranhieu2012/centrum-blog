@@ -1,19 +1,15 @@
 import git
 import json
-import logging
-import oracledb
 import os
 import subprocess
+
+from centrum_blog.libs.db import get_db_connection
 
 from datetime import datetime
 from pathlib import Path
 
 import centrum_blog.libs.git as git_helper
-from centrum_blog.libs.oci_helper.vault import get_secret
 from centrum_blog.libs.settings import settings
-
-
-logger = logging.getLogger(__name__)
 
 
 def reindex(static_content_path: str):
@@ -74,11 +70,7 @@ def index_changes(posts_path: Path, diff_index: list):
         elif item.change_type == "M":
             to_update.add(post_path)
 
-    db_secret = get_secret(settings.db_secret_ocid)
-
-    with oracledb.connect(
-        user=settings.db_user, password=db_secret, dsn=settings.db_connection_string
-    ) as connection:
+    with get_db_connection() as connection:
         cursor = connection.cursor()
 
         for item in to_delete:
@@ -99,11 +91,7 @@ def index_changes(posts_path: Path, diff_index: list):
 
 
 def index_all(posts_path: Path):
-    db_secret = get_secret(settings.db_secret_ocid)
-
-    with oracledb.connect(
-        user=settings.db_user, password=db_secret, dsn=settings.db_connection_string
-    ) as connection:
+    with get_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute("TRUNCATE TABLE blog_index")

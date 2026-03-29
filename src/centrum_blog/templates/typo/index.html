@@ -1,0 +1,87 @@
+{% extends "typo/base.html" %} {% block content %}
+<main class="main-content">
+  <div class="container is-max-desktop">
+    <!-- Page Header -->
+    <header class="section p-0">
+      <h1 class="title is-size-1 is-italic-title mb-2">Selected Chronology</h1>
+      <p class="page-subtitle">
+        A curated selection of my recent writings. I hope you find something useful out of these thoughts and
+        observations.
+      </p>
+    </header>
+    <!-- Blog Feed -->
+    <section class="section p-0">
+      {% for article in articles %}
+      <article class="article-entry">
+        <time class="date-label">{{ article.published.strftime("%b %d, %Y") }}</time>
+        <h2 class="article-title"><a href="/read/{{ article.article_id }}">{{ article.title }}</a></h2>
+        <p class="article-excerpt"><a href="/read/{{ article.article_id }}">{{ article.summary }}</a></p>
+      </article>
+      {% endfor %}
+    </section>
+    <!-- Pagination Section -->
+    <div class="pagination-container">
+      <div class="columns is-vcentered">
+        <div class="column">
+          <div class="field is-horizontal is-flex is-align-items-center">
+            <label class="label select-per-page mr-4 mb-0">Show per page</label>
+            <div class="control">
+              <div class="select is-small">
+                <select id="perPageSelect">
+                  <option value="10" {% if per_page == '10' %}selected{% endif %}>10</option>
+                  <option value="20" {% if per_page == '20' %}selected{% endif %}>20</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-narrow">
+          <nav aria-label="pagination" class="pagination is-small" role="navigation">
+            <a class="pagination-previous" href="/1"><span class="material-symbols-outlined">chevron_left</span></a>
+            <a class="pagination-next" href="/0"><span class="material-symbols-outlined">chevron_right</span></a>
+            <ul class="pagination-list">
+              {% for page in pages %}
+              <li>
+                {% if page == "ellipsis" %}
+                <span class="pagination-ellipsis">…</span>
+                {% else %}
+                <a
+                  aria-label="Goto page {{ page }}" {{ 'aria-current="page"' if page == current_page else '' }}
+                  class="pagination-link {{ 'is-current' if page == current_page else '' }}"
+                  href="/{{ page }}"
+                >{{ page }}</a>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const select = document.getElementById('perPageSelect');
+      if (!select) return;
+
+      const getCookie = (name) => {
+        const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+        return match ? match.pop() : null;
+      };
+
+      const saved = getCookie('per_page');
+      if (saved && ['10', '20'].includes(saved)) {
+        select.value = saved;
+      }
+
+      select.addEventListener('change', function (event) {
+        const value = event.target.value;
+        if (!['10', '20'].includes(value)) return;
+
+        document.cookie = `per_page=${value}; path=/; max-age=${10 * 60 * 60 * 24 * 365}; SameSite=Lax`;
+        window.location.reload();
+      });
+    });
+  </script>
+</main>
+{% endblock %}
