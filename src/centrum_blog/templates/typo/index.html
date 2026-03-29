@@ -46,7 +46,7 @@
                 <span class="pagination-ellipsis">…</span>
                 {% else %}
                 <a
-                  aria-label="Goto page {{ page }}" {{ 'aria-current="page"' if page == current_page else '' }}
+                  aria-label="Go to page {{ page }}" {{ 'aria-current="page"' if page == current_page else '' }}
                   class="pagination-link {{ 'is-current' if page == current_page else '' }}"
                   href="/{{ page }}"
                 >{{ page }}</a>
