@@ -36,10 +36,10 @@ def reindex(static_content_path: str):
 
 
 def get_metadata(entry_path: str) -> tuple[int, str]:
-    content_path = Path(entry_path) / "content.md"
-    mtime = content_path.stat().st_mtime
+    entry_path = Path(entry_path)
+    mtime = entry_path.stat().st_mtime
 
-    metadata_path = Path(entry_path) / "metadata.json"
+    metadata_path = entry_path / "metadata.json"
     tags = []
     with metadata_path.open() as f:
         tags = json.load(f)["tags"]

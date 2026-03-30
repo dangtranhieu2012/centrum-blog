@@ -46,7 +46,7 @@ def get_article_metadata(article_id: str) -> dict | None:
     with metadata_file.open() as f:
         metadata = json.load(f)
 
-    metadata["published"] = dt.date.fromtimestamp((article_path / "content.md").stat().st_mtime)
+    metadata["published"] = dt.date.fromtimestamp((article_path).stat().st_mtime)
     metadata["article_path"] = article_path
     metadata["article_id"] = article_id
 
