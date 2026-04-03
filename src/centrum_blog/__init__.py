@@ -6,7 +6,7 @@ import logging
 import mistune
 import re
 
-from centrum_blog.libs import article, indexer, util
+from centrum_blog.libs import article, credential, indexer
 
 from pathlib import Path
 from centrum_blog.constants import static_content_path
@@ -141,7 +141,7 @@ def reindex():
     if sha_name != 'sha256':
         return abort(503)
 
-    webhook_secret = util.get_secret(settings.webhook_secret, settings.webhook_secret_ocid)
+    webhook_secret = credential.get_secret(settings.webhook_secret, settings.webhook_secret_ocid)
 
     local_signature = hmac.new(webhook_secret.encode(), msg=request.get_data(), digestmod='sha256')
     if hmac.compare_digest(local_signature.hexdigest(), signature):

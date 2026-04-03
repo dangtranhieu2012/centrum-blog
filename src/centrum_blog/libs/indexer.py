@@ -3,14 +3,13 @@ import json
 import os
 import subprocess
 
+from centrum_blog.libs import credential
 from centrum_blog.libs.db import get_db_session
 from centrum_blog.libs.models import BlogIndex
+from centrum_blog.libs.settings import settings
 
 from datetime import datetime
 from pathlib import Path
-
-import centrum_blog.libs.git as git_helper
-from centrum_blog.libs.settings import settings
 
 
 def reindex(static_content_path: str):
@@ -20,7 +19,7 @@ def reindex(static_content_path: str):
         repo.remote().pull()
     except git.exc.NoSuchPathError:
         repo = git.Repo.clone_from(
-            git_helper.get_authenticated_url(settings.git_repo_url),
+            credential.get_authenticated_git_url(settings.git_repo_url),
             static_content_path,
         )
         old_head = None

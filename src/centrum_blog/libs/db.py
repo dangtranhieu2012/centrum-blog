@@ -3,13 +3,13 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from centrum_blog.libs import util
+from centrum_blog.libs import credential
 from centrum_blog.libs.settings import settings
 
 
 # Build SQLAlchemy connection URL
 def _get_sqlalchemy_url():
-    db_secret = util.get_secret(settings.db_secret, settings.db_secret_ocid)
+    db_secret = credential.get_secret(settings.db_secret, settings.db_secret_ocid)
     url = f"{settings.db_dialect_driver}://{settings.db_user}:{db_secret}@{settings.db_connection_string}"
     return url
 
