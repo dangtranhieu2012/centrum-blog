@@ -257,6 +257,11 @@ The `about.md` file should contain the complete HTML structure for the article c
 and layout elements. You can mix Markdown syntax with HTML tags as needed. HTML content will not be escaped, allowing
 for custom styling and layouts.
 
+**Note:** Since the about page is not a blog post, any resources (such as images, videos, or other media files)
+referenced in the `about.md` file should be stored appropriately within the content repository. For example, images are
+typically stored in the `images/` folder at the root of the content repository, while other resource types may be better
+suited to different locations based on your organizational preferences.
+
 Example `about.md` content:
 
 ```markdown
