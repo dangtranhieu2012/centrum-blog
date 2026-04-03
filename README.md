@@ -197,6 +197,7 @@ repository should follow this structure:
 
 ```
 content/
+├── about.md                    # About page content (optional)
 ├── posts/
 │   ├── <post-slug>/
 │   │   ├── content.md          # Markdown content of the blog post
@@ -218,7 +219,8 @@ content/
 Each blog post resides in its own directory under `posts/`, where the directory name serves as the URL slug for the
 post.
 
-- **`content.md`**: Contains the full Markdown content of the article.
+- **`content.md`**: Contains the full Markdown content of the article. HTML can be mixed with Markdown syntax, and the
+  HTML content will not be escaped, allowing for custom styling and layouts.
 - **`metadata.json`**: Contains post metadata in JSON format:
 
   ```json
@@ -245,6 +247,35 @@ Author information is stored under `authors/<author-email>/`:
   ```
 
 Author avatars are stored in the `images/` directory and referenced by filename in the author's metadata.
+
+### About Page
+
+The blog includes an optional about page that can be customized by adding an `about.md` file at the root of the content
+repository. This file should contain Markdown content that will be rendered and displayed on the `/about` route.
+
+The `about.md` file should contain the complete HTML structure for the article content, including any images, styling,
+and layout elements. You can mix Markdown syntax with HTML tags as needed. HTML content will not be escaped, allowing
+for custom styling and layouts.
+
+Example `about.md` content:
+
+```markdown
+<div class="media-left">
+  <figure class="image is-128x128">
+    <img src="/static/content/images/your-avatar.png" alt="Author Avatar" class="is-rounded" />
+  </figure>
+</div>
+<div class="media-content">
+  <h1 class="title is-italic-title">About Me</h1>
+
+Write your about page content here using Markdown. You can include **bold text**, _italic text_,
+[links](https://example.com), and any HTML elements you need.
+
+</div>
+```
+
+If the `about.md` file is not present, the about page will display a fallback message indicating that the content is not
+available.
 
 ## Database Schema
 

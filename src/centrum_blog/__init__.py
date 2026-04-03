@@ -112,9 +112,22 @@ def read(article_id: str):
 
 @app.route("/about")
 def about():
+    about_content = ""
+    about_file = Path(static_content_path) / "about.md"
+
+    if about_file.exists():
+        markdown = mistune.create_markdown(renderer=renderer(escape=False))
+        with about_file.open() as f:
+            about_content = markdown(f.read())
+        print(about_content)
+    else:
+        # Fallback content if file doesn't exist
+        about_content = "<p>About page content not found. Please add an about.md file to your content repository.</p>"
+
     return render_template(
         f"{settings.template}/about.html",
         now=dt.date.today(),
+        about_content=about_content,
     )
 
 

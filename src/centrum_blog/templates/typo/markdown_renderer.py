@@ -10,8 +10,8 @@ class MarkdownRenderer(mistune.HTMLRenderer):
     _article_id: str
 
 
-    def __init__(self, article_id: str):
-        super().__init__()
+    def __init__(self, article_id: str = "", escape: bool = True):
+        super().__init__(escape=escape)
         self._article_id = article_id
 
 
@@ -32,7 +32,11 @@ class MarkdownRenderer(mistune.HTMLRenderer):
 
 
     def image(self, alt, url, title=None):
-        src = url_for("static", filename=f"content/posts/{self._article_id}/{url}")
+        if self._article_id == "":
+            src = url_for("static", filename=f"content/images/{url}")
+        else:
+            src = url_for("static", filename=f"content/posts/{self._article_id}/{url}")
+
         s = f'<figure><img src="{src}" alt="{alt}"'
         if title:
             s += f' title="{title}"'
