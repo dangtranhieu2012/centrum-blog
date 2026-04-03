@@ -1,15 +1,32 @@
 from contextlib import contextmanager
 
-import oracledb
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from centrum_blog.libs import util
 from centrum_blog.libs.settings import settings
 
 
-@contextmanager
-def get_db_connection():
+# Build SQLAlchemy connection URL
+def _get_sqlalchemy_url():
     db_secret = util.get_secret(settings.db_secret, settings.db_secret_ocid)
-    with oracledb.connect(
-        user=settings.db_user, password=db_secret, dsn=settings.db_connection_string
-    ) as connection:
-        yield connection
+    url = f"{settings.db_dialect_driver}://{settings.db_user}:{db_secret}@{settings.db_connection_string}"
+    return url
+
+
+engine = create_engine(_get_sqlalchemy_url(), echo=False, pool_pre_ping=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@contextmanager
+def get_db_session():
+    """Yield a SQLAlchemy session for database operations."""
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

@@ -3,7 +3,8 @@ import json
 import os
 import subprocess
 
-from centrum_blog.libs.db import get_db_connection
+from centrum_blog.libs.db import get_db_session
+from centrum_blog.libs.models import BlogIndex
 
 from datetime import datetime
 from pathlib import Path
@@ -70,37 +71,38 @@ def index_changes(posts_path: Path, diff_index: list):
         elif item.change_type == "M":
             to_update.add(post_path)
 
-    with get_db_connection() as connection:
-        cursor = connection.cursor()
-
+    with get_db_session() as session:
         for item in to_delete:
-            sql = "DELETE FROM blog_index WHERE path=:path"
-            cursor.execute(sql, path=item)
+            session.query(BlogIndex).filter(BlogIndex.path == item).delete()
 
         for item in to_add:
             (mtime, tags) = get_metadata(posts_path / item)
-            sql = "INSERT INTO blog_index (path, updated, tags) VALUES (:path, :updated, :tags)"
-            cursor.execute(sql, path=item, updated=datetime.fromtimestamp(mtime), tags=tags)
+            blog_entry = BlogIndex(
+                path=item,
+                updated=datetime.fromtimestamp(mtime),
+                tags=tags
+            )
+            session.add(blog_entry)
 
         for item in to_update:
             (mtime, tags) = get_metadata(posts_path / item)
-            sql = "UPDATE blog_index SET updated=:updated, tags=:tags WHERE path=:path"
-            cursor.execute(sql, path=item, updated=datetime.fromtimestamp(mtime), tags=tags)
-
-        connection.commit()
+            session.query(BlogIndex).filter(BlogIndex.path == item).update({
+                BlogIndex.updated: datetime.fromtimestamp(mtime),
+                BlogIndex.tags: tags
+            })
 
 
 def index_all(posts_path: Path):
-    with get_db_connection() as connection:
-        cursor = connection.cursor()
-
-        cursor.execute("TRUNCATE TABLE blog_index")
+    with get_db_session() as session:
+        session.query(BlogIndex).delete()
 
         with os.scandir(posts_path) as it:
             for entry in it:
                 if entry.is_dir():
                     (mtime, tags) = get_metadata(entry)
-                    sql = "INSERT INTO blog_index (path, updated, tags) VALUES (:path, :updated, :tags)"
-                    cursor.execute(sql, path=entry.name, updated=datetime.fromtimestamp(mtime), tags=tags)
-
-        connection.commit()
+                    blog_entry = BlogIndex(
+                        path=entry.name,
+                        updated=datetime.fromtimestamp(mtime),
+                        tags=tags
+                    )
+                    session.add(blog_entry)
