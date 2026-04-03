@@ -152,6 +152,20 @@ This command will:
 
 Use this when you need to ensure the blog content is completely synchronized or when troubleshooting indexing issues.
 
+## Testing
+
+The project includes unit tests that can be run with:
+
+```bash
+uv run pytest
+```
+
+To run tests with development dependencies:
+
+```bash
+uv run --dev pytest
+```
+
 ## Webhook Configuration
 
 The application supports automatic content synchronization through GitHub webhooks. When configured, the blog will
