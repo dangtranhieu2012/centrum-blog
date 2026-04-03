@@ -6,12 +6,11 @@ import logging
 import mistune
 import re
 
-from centrum_blog.libs import article, indexer
+from centrum_blog.libs import article, indexer, util
 
 from pathlib import Path
 from centrum_blog.constants import static_content_path
 from centrum_blog.libs import article
-from centrum_blog.libs.oci_helper.vault import get_secret
 from centrum_blog.libs.settings import settings
 
 from flask import Flask, abort, render_template, request
@@ -129,7 +128,8 @@ def reindex():
     if sha_name != 'sha256':
         return abort(503)
 
-    webhook_secret = get_secret(settings.webhook_secret_ocid)
+    webhook_secret = util.get_secret(settings.webhook_secret, settings.webhook_secret_ocid)
+
     local_signature = hmac.new(webhook_secret.encode(), msg=request.get_data(), digestmod='sha256')
     if hmac.compare_digest(local_signature.hexdigest(), signature):
         indexer.reindex(static_content_path)

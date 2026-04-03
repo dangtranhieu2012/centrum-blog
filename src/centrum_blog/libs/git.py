@@ -3,6 +3,7 @@ import os
 
 from urllib.parse import urlparse, quote
 
+from centrum_blog.libs import util
 from centrum_blog.libs.oci_helper.vault import get_secret
 from centrum_blog.libs.settings import settings
 
@@ -10,25 +11,13 @@ from centrum_blog.libs.settings import settings
 logger = logging.getLogger(__name__)
 
 
-def get_git_credentials():
-    username = settings.git_username
-    password = settings.git_password
-
-    if settings.git_username_secret_ocid:
-        username = get_secret(settings.git_username_secret_ocid)
-
-    if settings.git_password_secret_ocid:
-        password = get_secret(settings.git_password_secret_ocid)
-
-    return username, password
-
-
 def get_authenticated_url(url):
     parsed = urlparse(url)
 
     # Check if the protocol is HTTP or HTTPS
     if parsed.scheme in ['http', 'https']:
-        username, password = get_git_credentials()
+        username = util.get_secret(settings.git_username, settings.git_username_secret_ocid)
+        password = util.get_secret(settings.git_password, settings.git_password_secret_ocid)
 
         if not password:
             logger.warning("HTTP(S) detected but credentials not found in settings.")
