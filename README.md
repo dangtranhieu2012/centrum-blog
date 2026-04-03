@@ -39,22 +39,21 @@ Configuration is managed through environment variables in the `.env` file, which
 
 ### Available Settings
 
-| Variable                   | Type   | Default           | Description                                                   |
-| -------------------------- | ------ | ----------------- | ------------------------------------------------------------- |
-| `log_level`                | string | `INFO`            | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)           |
-| `template`                 | string | `typo`            | Template directory to use                                     |
-| `db_user`                  | string | `ADMIN`           | Database username                                             |
-| `db_dialect_driver`        | string | `oracle+oracledb` | SQLAlchemy database dialect+driver                            |
-| `db_connection_string`     | string | _(required)_      | Database connection URL or TNS descriptor                     |
-| `db_secret`                | string | _optional_        | Plain text database password (not recommended for production) |
-| `db_secret_ocid`           | string | _optional_        | OCI Vault secret OCID for database password                   |
-| `git_repo_url`             | string | _(required)_      | Git repository URL for blog content                           |
-| `git_username`             | string | _optional_        | Git username                                                  |
-| `git_password`             | string | _optional_        | Git password (plain text, not recommended)                    |
-| `git_username_secret_ocid` | string | _optional_        | OCI Vault secret OCID for Git username                        |
-| `git_password_secret_ocid` | string | _optional_        | OCI Vault secret OCID for Git password                        |
-| `webhook_secret`           | string | _optional_        | Plain text webhook secret                                     |
-| `webhook_secret_ocid`      | string | _optional_        | OCI Vault secret OCID for webhook secret                      |
+| Variable                   | Type   | Default      | Description                                                                                                                                                       |
+| -------------------------- | ------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `log_level`                | string | `INFO`       | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)                                                                                                               |
+| `template`                 | string | `typo`       | Template directory to use                                                                                                                                         |
+| `db_user`                  | string | `ADMIN`      | Database username                                                                                                                                                 |
+| `db_connection_string`     | string | _(required)_ | Full SQLAlchemy URL including dialect+driver, host, and service name; should NOT include username/password (added via `db_user` and `db_secret`/`db_secret_ocid`) |
+| `db_secret`                | string | _optional_   | Plain text database password (not recommended for production)                                                                                                     |
+| `db_secret_ocid`           | string | _optional_   | OCI Vault secret OCID for database password                                                                                                                       |
+| `git_repo_url`             | string | _(required)_ | Git repository URL for blog content                                                                                                                               |
+| `git_username`             | string | _optional_   | Git username                                                                                                                                                      |
+| `git_password`             | string | _optional_   | Git password (plain text, not recommended)                                                                                                                        |
+| `git_username_secret_ocid` | string | _optional_   | OCI Vault secret OCID for Git username                                                                                                                            |
+| `git_password_secret_ocid` | string | _optional_   | OCI Vault secret OCID for Git password                                                                                                                            |
+| `webhook_secret`           | string | _optional_   | Plain text webhook secret                                                                                                                                         |
+| `webhook_secret_ocid`      | string | _optional_   | OCI Vault secret OCID for webhook secret                                                                                                                          |
 
 ### Example `.env` Configuration
 
@@ -65,10 +64,9 @@ template=typo
 
 # Database (Oracle Cloud example)
 db_user=ADMIN
-db_dialect_driver=oracle+oracledb
-db_connection_string="(description=(retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1521)(host=adb.region.oraclecloud.com))(connect_data=(service_name=your_service_name.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))"
-db_secret_ocid=ocid1.vaultsecret.oc1.region.aaaaa...
-
+# db_connection_string must be the full SQLAlchemy URL with dialect+driver prefix, excluding username/password
+# Username/password are read from db_user and db_secret/db_secret_ocid
+ db_connection_string="oracle+oracledb://adb.region.oraclecloud.com:1521/your_service_name?ssl_server_dn_match=yes"
 # Git Repository
 git_repo_url=https://github.com/username/blog-content.git
 git_password_secret_ocid=ocid1.vaultsecret.oc1.region.aaaaa...
@@ -109,9 +107,10 @@ webhook_secret_ocid=ocid1.vaultsecret.oc1.region.aaaaa...
 
    The profile must exist in `~/.oci/config`.
 
-5. **Alternative Database Backends:** Change `db_dialect_driver` to use different databases:
-   - **PostgreSQL**: `postgresql://user:pass@localhost:5432/dbname`
-   - **MySQL**: `mysql+pymysql://user:pass@localhost:3306/dbname`
+5. **Alternative Database Backends:** Provide a full SQLAlchemy URL via `db_connection_string`; credentials are supplied
+   by `db_user` and `db_secret`/`db_secret_ocid`:
+   - **PostgreSQL**: `postgresql://localhost:5432/dbname`
+   - **MySQL**: `mysql+pymysql://localhost:3306/dbname`
    - **SQLite**: `sqlite:///./blog.db`
 
 ## Running the Application
@@ -330,7 +329,6 @@ The application uses a single `blog_index` table:
 
 1. Switch to a simpler database for testing (SQLite):
    ```bash
-   db_dialect_driver=sqlite
    db_connection_string=sqlite:///./blog.db
    ```
 
