@@ -10,8 +10,7 @@ from centrum_blog.libs.settings import settings
 # Build SQLAlchemy connection URL
 def _get_sqlalchemy_url():
     db_secret = credential.get_secret(settings.db_secret, settings.db_secret_ocid)
-    url = f"{settings.db_dialect_driver}://{settings.db_user}:{db_secret}@{settings.db_connection_string}"
-    return url
+    return credential.construct_authenticated_url(settings.db_connection_string, settings.db_user, db_secret)
 
 
 def get_engine():

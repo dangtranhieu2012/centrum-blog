@@ -1,151 +1,201 @@
 from unittest.mock import patch
 
-from centrum_blog.libs.credential import get_authenticated_git_url, get_secret
+from centrum_blog.libs.credential import construct_authenticated_url, get_authenticated_git_url, get_secret
 
 
 class TestGetAuthenticatedGitUrl:
     """Test cases for get_authenticated_git_url function"""
 
+    @patch('centrum_blog.libs.credential.construct_authenticated_url')
     @patch('centrum_blog.libs.credential.get_secret')
     @patch('centrum_blog.libs.credential.settings')
-    def test_http_url_with_credentials(self, mock_settings, mock_get_secret):
-        """Test HTTP URL with username and password"""
-
+    def test_http_scheme_fetches_credentials(self, mock_settings, mock_get_secret, mock_construct):
+        """Test HTTP(S) URLs fetch credentials and pass to construct function"""
         mock_get_secret.side_effect = ["username", "password"]
+        mock_construct.return_value = "https://username:password@github.com/user/repo.git"
 
         url = "https://github.com/user/repo.git"
         result = get_authenticated_git_url(url)
 
-        expected = "https://username:password@github.com/user/repo.git"
-        assert result == expected
+        assert result == "https://username:password@github.com/user/repo.git"
         assert mock_get_secret.call_count == 2
+        mock_construct.assert_called_once_with(url, "username", "password")
 
     @patch('centrum_blog.libs.credential.get_secret')
     @patch('centrum_blog.libs.credential.settings')
-    def test_https_url_with_credentials(self, mock_settings, mock_get_secret):
-        """Test HTTPS URL with username and password"""
-        mock_get_secret.side_effect = ["user", "pass123"]
-
-        url = "https://gitlab.com/group/project.git"
-        result = get_authenticated_git_url(url)
-
-        expected = "https://user:pass123@gitlab.com/group/project.git"
-        assert result == expected
-
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_http_url_with_username_only(self, mock_settings, mock_get_secret):
-        """Test HTTP URL with username but empty password"""
-        mock_get_secret.side_effect = ["username", ""]
-
-        url = "https://github.com/user/repo.git"
-        result = get_authenticated_git_url(url)
-
-        expected = "https://username@github.com/user/repo.git"
-        assert result == expected
-
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_http_url_with_password_only(self, mock_settings, mock_get_secret):
-        """Test HTTP URL with password but no username"""
-        mock_get_secret.side_effect = ["", "password"]
-
-        url = "https://github.com/user/repo.git"
-        result = get_authenticated_git_url(url)
-
-        expected = "https://password@github.com/user/repo.git"
-        assert result == expected
-
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_http_url_no_credentials(self, mock_settings, mock_get_secret):
-        """Test HTTP URL with no credentials available"""
-        mock_get_secret.side_effect = ["", ""]
-
-        url = "https://github.com/user/repo.git"
-        result = get_authenticated_git_url(url)
-
-        assert result == url  # Should return original URL
-
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_ssh_url_unchanged(self, mock_settings, mock_get_secret):
-        """Test SSH URL remains unchanged"""
-        url = "git@github.com:user/repo.git"
-        result = get_authenticated_git_url(url)
-
-        assert result == url
+    def test_non_http_scheme_returns_unchanged(self, mock_settings, mock_get_secret):
+        """Test non-HTTP(S) URLs return unchanged without fetching credentials"""
+        ssh_url = "git@github.com:user/repo.git"
+        result = get_authenticated_git_url(ssh_url)
+        assert result == ssh_url
         mock_get_secret.assert_not_called()
 
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_git_url_unchanged(self, mock_settings, mock_get_secret):
-        """Test git:// URL remains unchanged"""
-        url = "git://github.com/user/repo.git"
-        result = get_authenticated_git_url(url)
+        git_url = "git://github.com/user/repo.git"
+        result = get_authenticated_git_url(git_url)
+        assert result == git_url
+
+
+class TestConstructAuthenticatedUrl:
+    """Test cases for construct_authenticated_url function"""
+
+    def test_https_git_url_with_credentials(self):
+        """Test HTTPS Git URL with username and password"""
+        url = "https://github.com/user/repo.git"
+        result = construct_authenticated_url(url, "myuser", "mypass")
+
+        expected = "https://myuser:mypass@github.com/user/repo.git"
+        assert result == expected
+
+    def test_http_url_with_credentials(self):
+        """Test HTTP URL with credentials"""
+        url = "http://example.com/path"
+        result = construct_authenticated_url(url, "admin", "secret123")
+
+        expected = "http://admin:secret123@example.com/path"
+        assert result == expected
+
+    def test_username_only(self):
+        """Test URL with username but no password"""
+        url = "https://gitlab.com/project.git"
+        result = construct_authenticated_url(url, "developer", None)
+
+        expected = "https://developer@gitlab.com/project.git"
+        assert result == expected
+
+    def test_password_only(self):
+        """Test URL with password but no username"""
+        url = "https://gitlab.com/project.git"
+        result = construct_authenticated_url(url, None, "token123")
+
+        expected = "https://token123@gitlab.com/project.git"
+        assert result == expected
+
+    def test_no_credentials(self):
+        """Test URL without credentials returns original URL"""
+        url = "https://github.com/user/repo.git"
+        result = construct_authenticated_url(url, None, None)
 
         assert result == url
-        mock_get_secret.assert_not_called()
 
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_special_characters_in_credentials(self, mock_settings, mock_get_secret):
-        """Test URL encoding of special characters in credentials"""
-        mock_get_secret.side_effect = ["user@domain.com", "pass:word@123"]
+    def test_empty_string_credentials(self):
+        """Test URL with empty string credentials"""
+        url = "https://github.com/user/repo.git"
+        result = construct_authenticated_url(url, "", "")
 
+        assert result == url
+
+    def test_special_characters_in_username(self):
+        """Test URL encoding of special characters in username"""
         url = "https://example.com/repo.git"
-        result = get_authenticated_git_url(url)
+        result = construct_authenticated_url(url, "user@domain.com", "pass")
 
-        # Check that special characters are URL-encoded
+        expected = "https://user%40domain.com:pass@example.com/repo.git"
+        assert result == expected
+
+    def test_special_characters_in_password(self):
+        """Test URL encoding of special characters in password"""
+        url = "https://example.com/repo.git"
+        result = construct_authenticated_url(url, "user", "pass:word@123")
+
+        expected = "https://user:pass%3Aword%40123@example.com/repo.git"
+        assert result == expected
+
+    def test_special_characters_in_both(self):
+        """Test URL encoding of special characters in both username and password"""
+        url = "https://example.com/repo.git"
+        result = construct_authenticated_url(url, "user@domain.com", "pass:word@123")
+
         expected = "https://user%40domain.com:pass%3Aword%40123@example.com/repo.git"
         assert result == expected
 
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_empty_credentials(self, mock_settings, mock_get_secret):
-        """Test with empty credentials"""
-        mock_get_secret.side_effect = [None, None]
-
-        url = "https://github.com/user/repo.git"
-        result = get_authenticated_git_url(url)
-
-        assert result == url
-        assert mock_get_secret.call_count == 2
-
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_url_with_port(self, mock_settings, mock_get_secret):
+    def test_url_with_port(self):
         """Test URL with custom port"""
-        mock_get_secret.side_effect = ["user", "pass"]
+        url = "https://example.com:8443/repo.git"
+        result = construct_authenticated_url(url, "admin", "pass")
 
-        url = "https://example.com:8080/repo.git"
-        result = get_authenticated_git_url(url)
-
-        expected = "https://user:pass@example.com:8080/repo.git"
+        expected = "https://admin:pass@example.com:8443/repo.git"
         assert result == expected
 
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_url_with_query_params(self, mock_settings, mock_get_secret):
+    def test_url_with_path(self):
+        """Test URL with complex path"""
+        url = "https://example.com/path/to/repo.git"
+        result = construct_authenticated_url(url, "user", "pass")
+
+        expected = "https://user:pass@example.com/path/to/repo.git"
+        assert result == expected
+
+    def test_url_with_query_params(self):
         """Test URL with query parameters"""
-        mock_get_secret.side_effect = ["user", "pass"]
+        url = "https://example.com/repo.git?ref=main&version=1"
+        result = construct_authenticated_url(url, "user", "pass")
 
-        url = "https://github.com/user/repo.git?ref=main"
-        result = get_authenticated_git_url(url)
-
-        expected = "https://user:pass@github.com/user/repo.git?ref=main"
+        expected = "https://user:pass@example.com/repo.git?ref=main&version=1"
         assert result == expected
 
-    @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_url_with_fragment(self, mock_settings, mock_get_secret):
+    def test_url_with_fragment(self):
         """Test URL with fragment"""
-        mock_get_secret.side_effect = ["user", "pass"]
+        url = "https://example.com/repo.git#section"
+        result = construct_authenticated_url(url, "user", "pass")
 
-        url = "https://github.com/user/repo.git#readme"
-        result = get_authenticated_git_url(url)
+        expected = "https://user:pass@example.com/repo.git#section"
+        assert result == expected
 
-        expected = "https://user:pass@github.com/user/repo.git#readme"
+    def test_sqlalchemy_oracle_url(self):
+        """Test SQLAlchemy Oracle database URL"""
+        url = "oracle+oracledb://host:1521/service"
+        result = construct_authenticated_url(url, "dba_user", "dba_pass")
+
+        expected = "oracle+oracledb://dba_user:dba_pass@host:1521/service"
+        assert result == expected
+
+    def test_sqlalchemy_postgresql_url(self):
+        """Test SQLAlchemy PostgreSQL database URL"""
+        url = "postgresql://localhost:5432/mydb"
+        result = construct_authenticated_url(url, "postgres", "pgpass123")
+
+        expected = "postgresql://postgres:pgpass123@localhost:5432/mydb"
+        assert result == expected
+
+    def test_sqlalchemy_mysql_url(self):
+        """Test SQLAlchemy MySQL database URL"""
+        url = "mysql+pymysql://localhost/mydb"
+        result = construct_authenticated_url(url, "root", "mysql_pass")
+
+        expected = "mysql+pymysql://root:mysql_pass@localhost/mydb"
+        assert result == expected
+
+    def test_sqlalchemy_sqlite_url(self):
+        """Test SQLAlchemy SQLite URL (credentials are added though not used)"""
+        url = "sqlite:///path/to/database.db"
+        result = construct_authenticated_url(url, "user", "pass")
+
+        # SQLite has no network component, but credentials are still added to netloc
+        expected = "sqlite://user:pass@/path/to/database.db"
+        assert result == expected
+
+    def test_url_with_existing_credentials_are_replaced(self):
+        """Test that existing credentials in URL are properly replaced"""
+        url = "https://olduser:oldpass@example.com/repo.git"
+        result = construct_authenticated_url(url, "newuser", "newpass")
+
+        # Old credentials should be replaced with new ones
+        expected = "https://newuser:newpass@example.com/repo.git"
+        assert result == expected
+
+    def test_url_with_port_and_credentials(self):
+        """Test URL with both port and credentials"""
+        url = "oracle+oracledb://db.example.com:1521/ORCL"
+        result = construct_authenticated_url(url, "admin", "admin123")
+
+        expected = "oracle+oracledb://admin:admin123@db.example.com:1521/ORCL"
+        assert result == expected
+
+    def test_complex_password_with_special_chars(self):
+        """Test password with multiple special characters"""
+        url = "https://example.com/repo"
+        result = construct_authenticated_url(url, "user", "p@ss:w=rd/123?test#anchor")
+
+        expected = "https://user:p%40ss%3Aw%3Drd%2F123%3Ftest%23anchor@example.com/repo"
         assert result == expected
 
 
