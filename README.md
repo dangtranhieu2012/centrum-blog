@@ -9,6 +9,7 @@ MySQL, SQLite,...).
 
 - Python 3.12 or higher
 - [`uv`](https://docs.astral.sh/uv/) package manager
+- Git with [LFS (Large File Storage)](https://git-lfs.com/) extension installed
 
 ### Setup Steps
 
