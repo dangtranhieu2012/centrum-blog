@@ -133,6 +133,54 @@ Use the Waitress WSGI server for production:
 uv run waitress-serve --port 8080 src.centrum_blog:app
 ```
 
+## Content Management
+
+### Force Reindex Content Repository
+
+To forcefully reclone the content repository and rebuild all indexes from scratch, run:
+
+```bash
+uv run src/centrum_blog/rebuild_index.py
+```
+
+This command will:
+
+- Remove the existing cloned content repository
+- Clone the content repository fresh from the configured Git URL
+- Rebuild the blog index database with all posts
+
+Use this when you need to ensure the blog content is completely synchronized or when troubleshooting indexing issues.
+
+## Webhook Configuration
+
+The application supports automatic content synchronization through GitHub webhooks. When configured, the blog will
+automatically reindex content whenever changes are pushed to the content repository.
+
+### Setting up GitHub Webhooks
+
+1. **Go to your content repository on GitHub**
+   - Navigate to your GitHub repository containing the blog content
+   - Click on "Settings" tab
+   - Click on "Webhooks" in the left sidebar
+   - Click "Add webhook"
+
+2. **Configure the webhook:**
+   - **Payload URL**: `https://your-blog-domain.com/reindex`
+     - Replace `your-blog-domain.com` with your actual domain
+     - For local development, you can use tools like ngrok to expose your local server
+   - **Content type**: `application/json`
+   - **Secret**: Enter the same secret configured in your `.env` file as `webhook_secret` or `webhook_secret_ocid`
+   - **Which events would you like to trigger this webhook?**: Select "Just the push event"
+   - **Active**: Ensure this is checked
+
+3. **Save the webhook**
+
+### Security Notes
+
+- The webhook endpoint uses HMAC-SHA256 signature verification for security
+- Only push events are processed; other event types are ignored
+- The webhook secret must match the one configured in your application settings
+
 ## Features
 
 - **Markdown-based content:** Write blog posts in Markdown
@@ -142,26 +190,61 @@ uv run waitress-serve --port 8080 src.centrum_blog:app
 - **Responsive design:** Mobile-friendly Bulma CSS framework
 - **Code highlighting:** Syntax highlighting with Pygments
 
-## Project Structure
+## Content Repository Structure
+
+The blog content is stored in a separate Git repository and automatically indexed by the application. The content
+repository should follow this structure:
 
 ```
-centrum-blog/
-├── src/centrum_blog/
-│   ├── __init__.py              # Flask app & routes
-│   ├── constants.py             # Application constants
-│   ├── templates/typo/          # HTML templates
-│   ├── static/                  # CSS, images, etc.
-│   └── libs/
-│       ├── settings.py          # Configuration management
-│       ├── db.py                # SQLAlchemy database setup
-│       ├── models.py            # SQLAlchemy ORM models
-│       ├── article.py           # Article/blog logic
-│       ├── indexer.py           # Git indexing logic
-│       └── oci_helper/          # OCI integration
-├── pyproject.toml               # Project dependencies
-├── .env                         # Environment configuration
-└── README.md                    # This file
+content/
+├── posts/
+│   ├── <post-slug>/
+│   │   ├── content.md          # Markdown content of the blog post
+│   │   ├── metadata.json       # Post metadata (title, tags, author, summary)
+│   │   └── <image-files>       # Images used in the blog post
+│   └── <another-post-slug>/
+│       ├── content.md
+│       ├── metadata.json
+│       └── <image-files>
+├── authors/
+│   └── <author-email>/
+│       └── metadata.json       # Author information (name, avatar)
+└── images/
+    └── <image-files>           # Author avatars and other images
 ```
+
+### Post Structure
+
+Each blog post resides in its own directory under `posts/`, where the directory name serves as the URL slug for the
+post.
+
+- **`content.md`**: Contains the full Markdown content of the article.
+- **`metadata.json`**: Contains post metadata in JSON format:
+
+  ```json
+  {
+    "title": "Post Title",
+    "tags": ["tag1", "tag2"],
+    "author": "author@example.com",
+    "summary": "Brief description of the post"
+  }
+  ```
+
+- **`<image-files>`**: Any images referenced in the blog post should be stored within the post folder itself.
+
+### Author Structure
+
+Author information is stored under `authors/<author-email>/`:
+
+- **`metadata.json`**: Contains author details:
+  ```json
+  {
+    "name": "Author Name",
+    "avatar": "avatar-filename.png"
+  }
+  ```
+
+Author avatars are stored in the `images/` directory and referenced by filename in the author's metadata.
 
 ## Database Schema
 
