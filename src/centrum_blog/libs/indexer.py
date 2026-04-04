@@ -2,6 +2,7 @@ import git
 import json
 import os
 import subprocess
+import threading
 
 from sqlalchemy import func
 
@@ -14,28 +15,38 @@ from centrum_blog.libs.settings import settings
 from datetime import datetime
 from pathlib import Path
 
+reindexLock = threading.Lock()
 
 def reindex(static_content_path: str):
-    try:
-        repo = git.Repo(static_content_path)
-        old_head = repo.head.commit
-        repo.remote().pull()
-    except git.exc.NoSuchPathError:
-        repo = git.Repo.clone_from(
-            credential.get_authenticated_git_url(settings.git_repo_url),
-            static_content_path,
-        )
-        old_head = None
+    """
+    Reindex the blog posts by pulling the latest changes from the git repository and updating the database index accordingly.
 
-    p = Path(__file__).parent.parent / "git-restore-mtime"
-    subprocess.run(["python3", p], cwd=static_content_path)
+    Note that this only prevents multiple reindexing threads from running at the same time, it will not work if we
+    migrate to a different solution to serve the application that spawn multiple processes (e.g. gunicorn with multiple
+    workers). In that case we should consider using a distributed lock solution like Redis or database lock or better yet, use a file lock through fnctl.LOCK_EX to avoid extra external dependencies.
+    """
 
-    if old_head is not None:
-        if old_head != repo.head.commit:
-            diff_index = old_head.diff(repo.head.commit)
-            index_changes(Path(static_content_path) / "posts", diff_index)
-    else:
-        index_all(Path(static_content_path) / "posts")
+    with reindexLock:
+        try:
+            repo = git.Repo(static_content_path)
+            old_head = repo.head.commit
+            repo.remote().pull()
+        except git.exc.NoSuchPathError:
+            repo = git.Repo.clone_from(
+                credential.get_authenticated_git_url(settings.git_repo_url),
+                static_content_path,
+            )
+            old_head = None
+
+        p = Path(__file__).parent.parent / "git-restore-mtime"
+        subprocess.run(["python3", p], cwd=static_content_path)
+
+        if old_head is not None:
+            if old_head != repo.head.commit:
+                diff_index = old_head.diff(repo.head.commit)
+                index_changes(Path(static_content_path) / "posts", diff_index)
+        else:
+            index_all(Path(static_content_path) / "posts")
 
 
 def get_metadata(entry_path: str) -> tuple[int, str]:

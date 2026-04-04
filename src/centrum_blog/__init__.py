@@ -3,6 +3,7 @@ import hmac
 import importlib
 import json
 import logging
+import threading
 import mistune
 import re
 
@@ -145,7 +146,8 @@ def reindex():
 
     local_signature = hmac.new(webhook_secret.encode(), msg=request.get_data(), digestmod='sha256')
     if hmac.compare_digest(local_signature.hexdigest(), signature):
-        indexer.reindex(static_content_path)
+        t = threading.Thread(target=indexer.reindex, args=(static_content_path,))
+        t.start()
         return jsonify({"status": "OK"})
     else:
         return abort(401)
