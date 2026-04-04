@@ -11,6 +11,14 @@ from centrum_blog.libs.db import get_db_session
 from centrum_blog.libs.models import BlogIndex
 
 
+def is_article_exist_on_fs(article_id: str) -> bool:
+    article_path = Path(static_content_path) / "posts" / article_id
+    article_folder_exist = article_path.exists() and article_path.is_dir()
+    metadata_file_exist = (article_path / "metadata.json").exists()
+    content_file_exist = (article_path / "content.md").exists()
+    return article_folder_exist and metadata_file_exist and content_file_exist
+
+
 def get_total_pages(per_page: int) -> int:
     with get_db_session() as session:
         total_articles = session.query(func.count(BlogIndex.id)).scalar()

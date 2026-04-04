@@ -3,7 +3,10 @@ import json
 import os
 import subprocess
 
+from sqlalchemy import func
+
 from centrum_blog.libs import credential
+from centrum_blog.libs.article import is_article_exist_on_fs
 from centrum_blog.libs.db import get_db_session
 from centrum_blog.libs.models import BlogIndex
 from centrum_blog.libs.settings import settings
@@ -50,8 +53,7 @@ def get_metadata(entry_path: str) -> tuple[int, str]:
 
 def index_changes(posts_path: Path, diff_index: list):
     to_delete = set()
-    to_add = set()
-    to_update = set()
+    to_add_or_update = set()
 
     content_path = posts_path.parent
 
@@ -65,30 +67,32 @@ def index_changes(posts_path: Path, diff_index: list):
 
         if item.change_type == "D":
             to_delete.add(post_path)
-        elif item.change_type == "A":
-            to_add.add(post_path)
-        elif item.change_type == "M":
-            to_update.add(post_path)
+        else:
+            to_add_or_update.add(post_path)
 
     with get_db_session() as session:
         for item in to_delete:
+            if is_article_exist_on_fs(item):
+                continue
             session.query(BlogIndex).filter(BlogIndex.path == item).delete()
 
-        for item in to_add:
-            (mtime, tags) = get_metadata(posts_path / item)
-            blog_entry = BlogIndex(
-                path=item,
-                updated=datetime.fromtimestamp(mtime),
-                tags=tags
-            )
-            session.add(blog_entry)
+        for item in to_add_or_update:
+            if is_article_exist_on_fs(item):
+                (mtime, tags) = get_metadata(posts_path / item)
 
-        for item in to_update:
-            (mtime, tags) = get_metadata(posts_path / item)
-            session.query(BlogIndex).filter(BlogIndex.path == item).update({
-                BlogIndex.updated: datetime.fromtimestamp(mtime),
-                BlogIndex.tags: tags
-            })
+                exist = session.query(func.count(BlogIndex.id)).filter(BlogIndex.path == item).scalar()
+                if exist > 0:
+                    session.query(BlogIndex).filter(BlogIndex.path == item).update({
+                        BlogIndex.updated: datetime.fromtimestamp(mtime),
+                        BlogIndex.tags: tags
+                    })
+                else:
+                    blog_entry = BlogIndex(
+                        path=item,
+                        updated=datetime.fromtimestamp(mtime),
+                        tags=tags
+                    )
+                    session.add(blog_entry)
 
 
 def index_all(posts_path: Path):
