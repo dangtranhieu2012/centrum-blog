@@ -1,7 +1,15 @@
+import datetime as dt
 import json
+import os
 from unittest.mock import MagicMock, patch
 
-from centrum_blog.libs.article import is_article_exist_on_fs, get_total_pages
+from centrum_blog.libs.article import (
+    get_adjacent_articles,
+    get_article_metadata,
+    get_articles_list,
+    get_total_pages,
+    is_article_exist_on_fs,
+)
 
 
 class TestIsArticleExistOnFs:
@@ -184,3 +192,177 @@ class TestGetTotalPages:
         mock_context.__exit__.assert_called_once()
         # Assert: 15 articles / 5 per_page = 3
         assert result == 3
+
+
+class TestGetArticlesList:
+    """Test cases for get_articles_list function."""
+
+    @patch('centrum_blog.libs.article.get_article_metadata')
+    @patch('centrum_blog.libs.article.get_db_session')
+    def test_get_articles_list_returns_metadata_for_each_row(
+        self,
+        mock_get_db_session,
+        mock_get_article_metadata,
+    ):
+        mock_session = MagicMock()
+        mock_query = MagicMock()
+        rows = [('article-1',), ('article-2',)]
+        mock_query.order_by.return_value.offset.return_value.limit.return_value.all.return_value = rows
+        mock_session.query.return_value = mock_query
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+        mock_get_article_metadata.side_effect = lambda article_id: {'article_id': article_id}
+
+        result = get_articles_list(page=1, per_page=2)
+
+        assert result == [
+            {'article_id': 'article-1'},
+            {'article_id': 'article-2'},
+        ]
+        mock_get_article_metadata.assert_any_call('article-1')
+        mock_get_article_metadata.assert_any_call('article-2')
+
+
+class TestGetArticleMetadata:
+    """Test cases for get_article_metadata function."""
+
+    def test_get_article_metadata_reads_json_and_sets_published_and_path(self, tmp_path):
+        posts_dir = tmp_path / 'posts'
+        article_dir = posts_dir / 'test-article'
+        article_dir.mkdir(parents=True)
+
+        metadata = {'title': 'Test Article', 'author': 'tester'}
+        metadata_file = article_dir / 'metadata.json'
+        metadata_file.write_text(json.dumps(metadata))
+
+        os.utime(article_dir, (1000, 1000))
+
+        with patch('centrum_blog.libs.article.static_content_path', str(tmp_path)):
+            result = get_article_metadata('test-article')
+
+        assert result['title'] == 'Test Article'
+        assert result['author'] == 'tester'
+        assert result['article_id'] == 'test-article'
+        assert result['article_path'] == article_dir
+        assert result['published'] == dt.date.fromtimestamp(1000)
+
+
+class TestGetAdjacentArticles:
+    """Test cases for get_adjacent_articles function."""
+
+    @patch('centrum_blog.libs.article.get_article_metadata')
+    @patch('centrum_blog.libs.article.get_db_session')
+    def test_get_adjacent_articles_returns_previous_and_next(
+        self,
+        mock_get_db_session,
+        mock_get_article_metadata,
+    ):
+        mock_session = MagicMock()
+
+        current_query = MagicMock()
+        current_query.filter.return_value = current_query
+        current_query.first.return_value = (1000,)
+
+        prev_query = MagicMock()
+        prev_query.filter.return_value = prev_query
+        prev_query.order_by.return_value = prev_query
+        prev_query.first.return_value = ('prev-article',)
+
+        next_query = MagicMock()
+        next_query.filter.return_value = next_query
+        next_query.order_by.return_value = next_query
+        next_query.first.return_value = ('next-article',)
+
+        mock_session.query.side_effect = [current_query, prev_query, next_query]
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+        mock_get_article_metadata.side_effect = lambda article_id: {'article_id': article_id}
+
+        previous_article, next_article = get_adjacent_articles('current-article')
+
+        assert previous_article == {'article_id': 'prev-article'}
+        assert next_article == {'article_id': 'next-article'}
+        assert mock_session.query.call_count == 3
+
+    @patch('centrum_blog.libs.article.get_article_metadata')
+    @patch('centrum_blog.libs.article.get_db_session')
+    def test_get_adjacent_articles_returns_only_previous_when_no_next(
+        self,
+        mock_get_db_session,
+        mock_get_article_metadata,
+    ):
+        mock_session = MagicMock()
+        current_query = MagicMock()
+        current_query.filter.return_value = current_query
+        current_query.first.return_value = (1000,)
+
+        prev_query = MagicMock()
+        prev_query.filter.return_value = prev_query
+        prev_query.order_by.return_value = prev_query
+        prev_query.first.return_value = ('prev-article',)
+
+        next_query = MagicMock()
+        next_query.filter.return_value = next_query
+        next_query.order_by.return_value = next_query
+        next_query.first.return_value = None
+
+        mock_session.query.side_effect = [current_query, prev_query, next_query]
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+        mock_get_article_metadata.side_effect = lambda article_id: {'article_id': article_id}
+
+        previous_article, next_article = get_adjacent_articles('current-article')
+
+        assert previous_article == {'article_id': 'prev-article'}
+        assert next_article is None
+        assert mock_session.query.call_count == 3
+
+    @patch('centrum_blog.libs.article.get_article_metadata')
+    @patch('centrum_blog.libs.article.get_db_session')
+    def test_get_adjacent_articles_returns_only_next_when_no_previous(
+        self,
+        mock_get_db_session,
+        mock_get_article_metadata,
+    ):
+        mock_session = MagicMock()
+        current_query = MagicMock()
+        current_query.filter.return_value = current_query
+        current_query.first.return_value = (1000,)
+
+        prev_query = MagicMock()
+        prev_query.filter.return_value = prev_query
+        prev_query.order_by.return_value = prev_query
+        prev_query.first.return_value = None
+
+        next_query = MagicMock()
+        next_query.filter.return_value = next_query
+        next_query.order_by.return_value = next_query
+        next_query.first.return_value = ('next-article',)
+
+        mock_session.query.side_effect = [current_query, prev_query, next_query]
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+        mock_get_article_metadata.side_effect = lambda article_id: {'article_id': article_id}
+
+        previous_article, next_article = get_adjacent_articles('current-article')
+
+        assert previous_article is None
+        assert next_article == {'article_id': 'next-article'}
+        assert mock_session.query.call_count == 3
+
+    @patch('centrum_blog.libs.article.get_article_metadata')
+    @patch('centrum_blog.libs.article.get_db_session')
+    def test_get_adjacent_articles_returns_none_when_article_missing(
+        self,
+        mock_get_db_session,
+        mock_get_article_metadata,
+    ):
+        mock_session = MagicMock()
+        current_query = MagicMock()
+        current_query.filter.return_value = current_query
+        current_query.first.return_value = None
+
+        mock_session.query.return_value = current_query
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+
+        previous_article, next_article = get_adjacent_articles('missing-article')
+
+        assert previous_article is None
+        assert next_article is None
+        mock_get_article_metadata.assert_not_called()
