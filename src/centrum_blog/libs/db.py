@@ -1,10 +1,14 @@
 from contextlib import contextmanager
+from typing import Optional
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Engine, create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from centrum_blog.libs import credential
 from centrum_blog.libs.settings import settings
+
+_engine: Optional[Engine] = None
+_sessionmaker: Optional[sessionmaker[Session]] = None
 
 
 # Build SQLAlchemy connection URL
@@ -13,19 +17,21 @@ def _get_sqlalchemy_url():
     return credential.construct_authenticated_url(settings.db_connection_string, settings.db_user, db_secret)
 
 
-def get_engine():
+def get_engine() -> Engine:
     """Get or create the SQLAlchemy engine."""
-    if not hasattr(get_engine, '_engine'):
-        get_engine._engine = create_engine(_get_sqlalchemy_url(), echo=False, pool_pre_ping=True)
-    return get_engine._engine
+    global _engine
+    if _engine is None:
+        _engine = create_engine(_get_sqlalchemy_url(), echo=False, pool_pre_ping=True)
+    return _engine
 
 
-def get_sessionmaker():
+def get_sessionmaker() -> sessionmaker[Session]:
     """Get or create the sessionmaker."""
-    if not hasattr(get_sessionmaker, '_sessionmaker'):
+    global _sessionmaker
+    if _sessionmaker is None:
         engine = get_engine()
-        get_sessionmaker._sessionmaker = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    return get_sessionmaker._sessionmaker
+        _sessionmaker = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return _sessionmaker
 
 
 @contextmanager

@@ -6,12 +6,15 @@ from centrum_blog.libs import db
 class TestDb:
     """Test cases for db.py functions."""
 
+    def setup_method(self):
+        """Reset singleton globals before each test to prevent leakage."""
+        db._engine = None
+        db._sessionmaker = None
+
     def teardown_method(self):
-        """Clean up singleton attributes after each test to prevent leakage."""
-        if hasattr(db.get_engine, '_engine'):
-            delattr(db.get_engine, '_engine')
-        if hasattr(db.get_sessionmaker, '_sessionmaker'):
-            delattr(db.get_sessionmaker, '_sessionmaker')
+        """Reset singleton globals after each test to prevent leakage."""
+        db._engine = None
+        db._sessionmaker = None
 
     @patch('centrum_blog.libs.credential.construct_authenticated_url')
     @patch('centrum_blog.libs.credential.get_secret')

@@ -88,7 +88,7 @@ def read(article_id: str):
 
         body = ""
         markdown = mistune.create_markdown(renderer=renderer(article_id))
-        content_file = metadata["article_path"] / "content.md"
+        content_file = Path(str(metadata["article_path"])) / "content.md"
         with content_file.open() as f:
             body = markdown(f.read())
 

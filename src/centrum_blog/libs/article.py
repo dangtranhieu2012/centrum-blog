@@ -40,7 +40,7 @@ def get_articles_list(page: int, per_page: int) -> list[dict]:
     return articles
 
 
-def get_article_metadata(article_id: str) -> dict | None:
+def get_article_metadata(article_id: str) -> dict[str, str | dt.date | Path]:
     static_path = Path(static_content_path)
     article_path = static_path / "posts" / article_id
 

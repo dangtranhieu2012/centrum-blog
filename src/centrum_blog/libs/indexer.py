@@ -5,6 +5,7 @@ import subprocess
 import threading
 
 from sqlalchemy import func
+from git.exc import NoSuchPathError
 
 from centrum_blog.libs import credential
 from centrum_blog.libs.article import is_article_exist_on_fs
@@ -31,7 +32,7 @@ def reindex(static_content_path: str):
             repo = git.Repo(static_content_path)
             old_head = repo.head.commit
             repo.remote().pull()
-        except git.exc.NoSuchPathError:
+        except NoSuchPathError:
             repo = git.Repo.clone_from(
                 credential.get_authenticated_git_url(settings.git_repo_url),
                 static_content_path,
@@ -49,11 +50,11 @@ def reindex(static_content_path: str):
             index_all(Path(static_content_path) / "posts")
 
 
-def get_metadata(entry_path: str) -> tuple[int, str]:
-    entry_path = Path(entry_path)
-    mtime = entry_path.stat().st_mtime
+def get_metadata(entry_path: str) -> tuple[float, str]:
+    entry_path_p = Path(entry_path)
+    mtime = entry_path_p.stat().st_mtime
 
-    metadata_path = entry_path / "metadata.json"
+    metadata_path = entry_path_p / "metadata.json"
     tags = []
     with metadata_path.open() as f:
         tags = json.load(f).get("tags", [])
@@ -113,7 +114,7 @@ def index_all(posts_path: Path):
         with os.scandir(posts_path) as it:
             for entry in it:
                 if entry.is_dir():
-                    (mtime, tags) = get_metadata(entry)
+                    (mtime, tags) = get_metadata(str(entry))
                     blog_entry = BlogIndex(
                         path=entry.name,
                         updated=datetime.fromtimestamp(mtime),

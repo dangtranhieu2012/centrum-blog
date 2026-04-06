@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 from urllib.parse import quote, urlparse
 
-from centrum_blog.libs import settings
+from centrum_blog.libs.settings import settings
 from centrum_blog.libs.oci_helper import vault
 
 
@@ -13,7 +13,7 @@ def get_secret(secret: Optional[str] = None, secret_ocid: Optional[str] = None) 
     if secret is not None:
         return secret
     elif secret_ocid is not None:
-        return vault.get_secret(secret_ocid)
+        return vault.get_secret(secret_ocid) or ""
     else:
         return ""
 

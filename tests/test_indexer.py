@@ -243,9 +243,9 @@ class TestIndexChanges:
             mock_session.add.assert_called_once()
             added_obj = mock_session.add.call_args[0][0]
             assert isinstance(added_obj, BlogIndex)
-            assert added_obj.path == "article-1"
-            assert added_obj.updated == datetime.fromtimestamp(1000)
-            assert added_obj.tags == ",python,testing,"
+            assert getattr(added_obj, "path") == "article-1"
+            assert getattr(added_obj, "updated") == datetime.fromtimestamp(1000)
+            assert getattr(added_obj, "tags") == ",python,testing,"
 
     @patch("centrum_blog.libs.indexer.is_article_exist_on_fs", return_value=True)
     @patch("centrum_blog.libs.indexer.get_db_session")

@@ -23,7 +23,7 @@ class MarkdownRenderer(mistune.HTMLRenderer):
         lang = info.strip() if info else "text"
 
         try:
-            lexer = get_lexer_by_name(info, stripall=True)
+            lexer = get_lexer_by_name(lang, stripall=True)
         except:
             lexer = TextLexer()
 
@@ -31,13 +31,13 @@ class MarkdownRenderer(mistune.HTMLRenderer):
         return highlight(code, lexer, formatter)
 
 
-    def image(self, alt, url, title=None):
+    def image(self, text, url, title=None):
         if self._article_id == "":
             src = url_for("static", filename=f"content/images/{url}")
         else:
             src = url_for("static", filename=f"content/posts/{self._article_id}/{url}")
 
-        s = f'<figure><img src="{src}" alt="{alt}"'
+        s = f'<figure><img src="{src}" alt="{text}"'
         if title:
             s += f' title="{title}"'
-        return s + f' /><figcaption>{alt}</figcaption></figure>'
+        return s + f' /><figcaption>{text}</figcaption></figure>'

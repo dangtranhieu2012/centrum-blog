@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     db_secret: Optional[str] = None
     db_secret_ocid: Optional[str] = None
 
-    git_repo_url: str
+    git_repo_url: str = ""
     git_username: Optional[str] = None
     git_password: Optional[str] = None
     git_username_secret_ocid: Optional[str] = None

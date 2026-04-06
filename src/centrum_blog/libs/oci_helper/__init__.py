@@ -30,11 +30,8 @@ def get_config() -> dict:
         except FileNotFoundError:
             logger.error("OCI config file or API key file not found.")
             return {}
-        except oci.config.config.ConfigErrors as e:
-            logger.error(f"Error loading OCI config profile '{profile_name}': {e}")
-            return {}
         except Exception as e:
-            logger.error(f"An unexpected error occurred while getting OCI config: {e}")
+            logger.error(f"Error loading OCI config profile '{profile_name}': {e}")
             return {}
 
     config = ret
