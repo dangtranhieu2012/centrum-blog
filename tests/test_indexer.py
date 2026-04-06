@@ -171,9 +171,10 @@ class TestIndexChanges:
         self,
         mock_get_db_session,
         mock_is_article_exist_on_fs,
+        tmp_path,
     ):
         """Test that index_changes deletes articles from database when they are deleted in git."""
-        posts_path = Path("/tmp/posts")
+        posts_path = tmp_path / "posts"
         diff_index = [MagicMock()]
         diff_index[0].change_type = "D"  # Deleted
         diff_index[0].a_path = "posts/article-1/content.md"
@@ -197,9 +198,10 @@ class TestIndexChanges:
         self,
         mock_get_db_session,
         mock_is_article_exist_on_fs,
+        tmp_path,
     ):
         """Test that index_changes skips deletion when article still exists on filesystem."""
-        posts_path = Path("/tmp/posts")
+        posts_path = tmp_path / "posts"
         diff_index = [MagicMock()]
         diff_index[0].change_type = "D"  # Deleted
         diff_index[0].a_path = "posts/article-1/content.md"
@@ -219,9 +221,10 @@ class TestIndexChanges:
         self,
         mock_get_db_session,
         mock_is_article_exist_on_fs,
+        tmp_path,
     ):
         """Test that index_changes adds new articles to database."""
-        posts_path = Path("/tmp/posts")
+        posts_path = tmp_path / "posts"
         diff_index = [MagicMock()]
         diff_index[0].change_type = "A"  # Added
         diff_index[0].a_path = "posts/article-1/content.md"
@@ -250,9 +253,10 @@ class TestIndexChanges:
         self,
         mock_get_db_session,
         mock_is_article_exist_on_fs,
+        tmp_path,
     ):
         """Test that index_changes updates existing articles in database."""
-        posts_path = Path("/tmp/posts")
+        posts_path = tmp_path / "posts"
         diff_index = [MagicMock()]
         diff_index[0].change_type = "M"  # Modified
         diff_index[0].a_path = "posts/article-1/content.md"
@@ -281,9 +285,10 @@ class TestIndexAll:
     def test_index_all_deletes_all_existing_entries_and_adds_new_ones(
         self,
         mock_get_db_session,
+        tmp_path,
     ):
         """Test that index_all clears database and re-adds all entries."""
-        posts_path = Path("/tmp/posts")
+        posts_path = tmp_path / "posts"
 
         # Mock directory listing to return two articles
         mock_entries = [
@@ -327,9 +332,10 @@ class TestIndexAll:
     def test_index_all_handles_directory_with_no_articles(
         self,
         mock_get_db_session,
+        tmp_path,
     ):
         """Test that index_all works correctly when there are no articles."""
-        posts_path = Path("/tmp/posts")
+        posts_path = tmp_path / "posts"
 
         # Mock directory listing to return no entries
         mock_entries = []
