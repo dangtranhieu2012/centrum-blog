@@ -24,7 +24,8 @@ def reindex(static_content_path: str):
 
     Note that this only prevents multiple reindexing threads from running at the same time, it will not work if we
     migrate to a different solution to serve the application that spawn multiple processes (e.g. gunicorn with multiple
-    workers). In that case we should consider using a distributed lock solution like Redis or database lock or better yet, use a file lock through fnctl.LOCK_EX to avoid extra external dependencies.
+    workers). In that case we should consider using a distributed lock solution like Redis or database lock or better
+    yet, use a file lock through fnctl.LOCK_EX to avoid extra external dependencies.
     """
 
     with reindexLock:
