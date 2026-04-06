@@ -56,7 +56,7 @@ def get_metadata(entry_path: str) -> tuple[int, str]:
     metadata_path = entry_path / "metadata.json"
     tags = []
     with metadata_path.open() as f:
-        tags = json.load(f)["tags"]
+        tags = json.load(f).get("tags", [])
     tags = "," + ",".join(tags) + "," if len(tags) > 0 else ""
 
     return (mtime, tags)
