@@ -116,3 +116,52 @@ class TestDb:
         assert str(excinfo.value) == "Database error"
         mock_session.rollback.assert_called_once()
         mock_session.close.assert_called_once()
+
+    @patch('centrum_blog.libs.settings.settings.db_connection_string', new='')
+    def test_initialize_database_raises_when_connection_string_missing(self):
+        """Test initialize_database raises ValueError when connection string is missing."""
+        with pytest.raises(ValueError, match="Database connection string is not configured"):
+            db.initialize_database()
+
+    @patch('centrum_blog.libs.models.BlogIndex.metadata.create_all')
+    @patch('centrum_blog.libs.db.get_engine')
+    @patch('centrum_blog.libs.settings.settings.db_connection_string', new='oracle://conn_str')
+    def test_initialize_database_creates_tables(self, mock_get_engine, mock_create_all):
+        """Test initialize_database creates tables using current engine."""
+        mock_engine = MagicMock()
+        mock_get_engine.return_value = mock_engine
+
+        db.initialize_database()
+
+        mock_get_engine.assert_called_once()
+        mock_create_all.assert_called_once_with(bind=mock_engine)
+
+    @patch('centrum_blog.libs.models.BlogIndex.metadata.create_all', side_effect=RuntimeError('create failed'))
+    @patch('centrum_blog.libs.db.get_engine')
+    @patch('centrum_blog.libs.settings.settings.db_connection_string', new='oracle://conn_str')
+    def test_initialize_database_raises_on_error(self, mock_get_engine, mock_create_all):
+        """Test initialize_database re-raises errors when raise_on_error is True."""
+        mock_get_engine.return_value = MagicMock()
+
+        with pytest.raises(RuntimeError, match='create failed'):
+            db.initialize_database(raise_on_error=True)
+
+        mock_create_all.assert_called_once()
+
+    @patch('centrum_blog.libs.db.logger.exception')
+    @patch('centrum_blog.libs.models.BlogIndex.metadata.create_all', side_effect=RuntimeError('create failed'))
+    @patch('centrum_blog.libs.db.get_engine')
+    @patch('centrum_blog.libs.settings.settings.db_connection_string', new='oracle://conn_str')
+    def test_initialize_database_swallows_error_when_configured(
+        self,
+        mock_get_engine,
+        mock_create_all,
+        mock_logger_exception,
+    ):
+        """Test initialize_database logs and swallows errors when raise_on_error is False."""
+        mock_get_engine.return_value = MagicMock()
+
+        db.initialize_database(raise_on_error=False)
+
+        mock_create_all.assert_called_once()
+        mock_logger_exception.assert_called_once_with("Failed to initialize database tables during startup")
