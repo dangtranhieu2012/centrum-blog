@@ -51,11 +51,10 @@ def reindex(static_content_path: str):
             index_all(Path(static_content_path) / "posts")
 
 
-def get_metadata(entry_path: str) -> tuple[float, str]:
-    entry_path_p = Path(entry_path)
-    mtime = entry_path_p.stat().st_mtime
+def get_metadata(entry_path: Path) -> tuple[float, str]:
+    mtime = entry_path.stat().st_mtime
 
-    metadata_path = entry_path_p / "metadata.json"
+    metadata_path = entry_path / "metadata.json"
     tags = []
     with metadata_path.open() as f:
         tags = json.load(f).get("tags", [])
@@ -115,7 +114,7 @@ def index_all(posts_path: Path):
         with os.scandir(posts_path) as it:
             for entry in it:
                 if entry.is_dir():
-                    (mtime, tags) = get_metadata(str(entry))
+                    (mtime, tags) = get_metadata(posts_path / entry.name)
                     blog_entry = BlogIndex(
                         path=entry.name,
                         updated=datetime.fromtimestamp(mtime),

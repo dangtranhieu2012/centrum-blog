@@ -112,7 +112,7 @@ class TestGetMetadata:
         # Set a specific mtime
         os.utime(article_dir, (1000, 1000))
 
-        result = indexer.get_metadata(str(article_dir))
+        result = indexer.get_metadata(article_dir)
 
         # Should return (mtime, tags) tuple
         assert len(result) == 2
@@ -133,7 +133,7 @@ class TestGetMetadata:
         # Set a specific mtime
         os.utime(article_dir, (1000, 1000))
 
-        result = indexer.get_metadata(str(article_dir))
+        result = indexer.get_metadata(article_dir)
 
         # Should return (mtime, tags) tuple with empty tags
         assert len(result) == 2
@@ -154,7 +154,7 @@ class TestGetMetadata:
         # Set a specific mtime
         os.utime(article_dir, (1000, 1000))
 
-        result = indexer.get_metadata(str(article_dir))
+        result = indexer.get_metadata(article_dir)
 
         # Should return (mtime, tags) tuple with empty tags
         assert len(result) == 2

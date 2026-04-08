@@ -1,3 +1,5 @@
+import logging
+
 from contextlib import contextmanager
 from typing import Optional
 
@@ -7,8 +9,11 @@ from sqlalchemy.orm import Session, sessionmaker
 from centrum_blog.libs import credential
 from centrum_blog.libs.settings import settings
 
+
 _engine: Optional[Engine] = None
 _sessionmaker: Optional[sessionmaker[Session]] = None
+
+logger = logging.getLogger(__name__)
 
 
 # Build SQLAlchemy connection URL
@@ -32,6 +37,22 @@ def get_sessionmaker() -> sessionmaker[Session]:
         engine = get_engine()
         _sessionmaker = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return _sessionmaker
+
+
+def initialize_database(raise_on_error: bool = True) -> None:
+    """Create database tables if they do not already exist."""
+    if not settings.db_connection_string:
+        return
+
+    # Local import avoids circular dependency with model modules importing db helpers.
+    from centrum_blog.libs.models import BlogIndex
+
+    try:
+        BlogIndex.metadata.create_all(bind=get_engine())
+    except Exception:
+        if raise_on_error:
+            raise
+        logger.exception("Failed to initialize database tables during startup")
 
 
 @contextmanager
