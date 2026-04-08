@@ -3,6 +3,8 @@ import hmac
 import importlib
 import json
 import logging
+import os
+import sys
 import threading
 import mistune
 import re
@@ -12,17 +14,22 @@ from centrum_blog.libs import article, credential, indexer
 from pathlib import Path
 from centrum_blog.constants import static_content_path
 from centrum_blog.libs import article
+from centrum_blog.libs.db import initialize_database
 from centrum_blog.libs.settings import settings
 
 from flask import Flask, abort, render_template, request
 from flask.json import jsonify
 
 
-app = Flask(__name__)
-
 log_level = getattr(logging, settings.log_level.upper())
 logging.basicConfig(level=log_level)
 logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+
+if "pytest" not in sys.modules and os.getenv("PYTEST_CURRENT_TEST") is None:
+    initialize_database()
+    indexer.reindex(static_content_path)
 
 renderer = importlib.import_module(f"centrum_blog.templates.{settings.template}.markdown_renderer").MarkdownRenderer
 

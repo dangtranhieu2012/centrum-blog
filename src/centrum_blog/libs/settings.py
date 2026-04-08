@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     template: str = "typo"
 
-    db_user: str = "ADMIN"
+    db_user: Optional[str] = None
     db_connection_string: str = ""
     db_secret: Optional[str] = None
     db_secret_ocid: Optional[str] = None

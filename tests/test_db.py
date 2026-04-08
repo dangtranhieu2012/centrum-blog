@@ -42,6 +42,12 @@ class TestDb:
             "some_secret"
         )
 
+    @patch('centrum_blog.libs.settings.settings.db_connection_string', new='sqlite:///./blog.db')
+    def test__get_sqlalchemy_url_sqlite(self):
+        """Test that SQLite URLs are used directly without credential injection."""
+        result = db._get_sqlalchemy_url()
+        assert result == 'sqlite:///./blog.db'
+
     @patch('centrum_blog.libs.db.create_engine')
     @patch('centrum_blog.libs.db._get_sqlalchemy_url')
     def test_get_engine(self, mock_get_url, mock_create_engine):

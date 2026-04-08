@@ -8,8 +8,7 @@ class TestGetAuthenticatedGitUrl:
 
     @patch('centrum_blog.libs.credential.construct_authenticated_url')
     @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_http_scheme_fetches_credentials(self, mock_settings, mock_get_secret, mock_construct):
+    def test_http_scheme_fetches_credentials(self, mock_get_secret, mock_construct):
         """Test HTTP(S) URLs fetch credentials and pass to construct function"""
         mock_get_secret.side_effect = ["username", "password"]
         mock_construct.return_value = "https://username:password@github.com/user/repo.git"
@@ -22,8 +21,7 @@ class TestGetAuthenticatedGitUrl:
         mock_construct.assert_called_once_with(url, "username", "password")
 
     @patch('centrum_blog.libs.credential.get_secret')
-    @patch('centrum_blog.libs.credential.settings')
-    def test_non_http_scheme_returns_unchanged(self, mock_settings, mock_get_secret):
+    def test_non_http_scheme_returns_unchanged(self, mock_get_secret):
         """Test non-HTTP(S) URLs return unchanged without fetching credentials"""
         ssh_url = "git@github.com:user/repo.git"
         result = get_authenticated_git_url(ssh_url)
@@ -165,12 +163,11 @@ class TestConstructAuthenticatedUrl:
         assert result == expected
 
     def test_sqlalchemy_sqlite_url(self):
-        """Test SQLAlchemy SQLite URL (credentials are added though not used)"""
+        """Test SQLAlchemy SQLite URL is preserved as-is."""
         url = "sqlite:///path/to/database.db"
         result = construct_authenticated_url(url, "user", "pass")
 
-        # SQLite has no network component, but credentials are still added to netloc
-        expected = "sqlite://user:pass@/path/to/database.db"
+        expected = "sqlite:///path/to/database.db"
         assert result == expected
 
     def test_url_with_existing_credentials_are_replaced(self):

@@ -1,12 +1,8 @@
-import logging
 from typing import Optional
 from urllib.parse import quote, urlparse
 
 from centrum_blog.libs.settings import settings
 from centrum_blog.libs.oci_helper import vault
-
-
-logger = logging.getLogger(__name__)
 
 
 def get_secret(secret: Optional[str] = None, secret_ocid: Optional[str] = None) -> str:
@@ -46,6 +42,11 @@ def construct_authenticated_url(
         'oracle+oracledb://admin:secret@host:1521/db'
     """
     parsed = urlparse(url)
+
+    # SQLite URLs rely on exact slash formatting (e.g., sqlite:///db.sqlite3).
+    # Do not inject credentials or rebuild these URLs.
+    if parsed.scheme == "sqlite":
+        return url
 
     # URL-encode credentials to handle special characters
     # Use safe='' to encode all special characters including /:?#
