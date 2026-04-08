@@ -77,7 +77,7 @@ def index(page: int = 1):
         per_page=per_page,
         articles=articles,
         current_page=page,
-        pages=generate_pagination(page, article.get_total_pages(int(per_page))),
+        pages=generate_pagination(page, total_pages),
     )
 
 
