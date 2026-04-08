@@ -42,7 +42,7 @@ def get_sessionmaker() -> sessionmaker[Session]:
 def initialize_database(raise_on_error: bool = True) -> None:
     """Create database tables if they do not already exist."""
     if not settings.db_connection_string:
-        return
+        raise ValueError("Database connection string is not configured")
 
     # Local import avoids circular dependency with model modules importing db helpers.
     from centrum_blog.libs.models import BlogIndex
