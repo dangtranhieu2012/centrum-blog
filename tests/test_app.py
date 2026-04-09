@@ -1,6 +1,7 @@
 import datetime as dt
 import hashlib
 import hmac
+import json
 from unittest.mock import patch
 
 from centrum_blog import app, generate_pagination, sanitize_name
@@ -156,3 +157,84 @@ class TestReindexEndpoint:
 
         assert response.status_code == 401
         mock_reindex.assert_not_called()
+
+
+class TestReadRoute:
+    @patch("centrum_blog.mistune.create_markdown")
+    @patch("centrum_blog.article.get_adjacent_articles", return_value=(None, None))
+    @patch("centrum_blog.article.get_article_metadata")
+    def test_read_renders_article_when_files_exist(
+        self,
+        mock_get_article_metadata,
+        mock_get_adjacent_articles,
+        mock_create_markdown,
+        tmp_path,
+    ):
+        content_root = tmp_path / "content"
+        author_dir = content_root / "authors" / "test-author"
+        author_dir.mkdir(parents=True)
+        (author_dir / "metadata.json").write_text(json.dumps({"name": "Test Author", "avatar": "avatar.png"}))
+
+        article_dir = tmp_path / "posts" / "clean-name"
+        article_dir.mkdir(parents=True)
+        (article_dir / "content.md").write_text("# Hello")
+
+        mock_get_article_metadata.return_value = {
+            "author": "test-author",
+            "published": dt.date(2026, 1, 1),
+            "title": "Clean Title",
+            "tags": ["python"],
+            "article_path": article_dir,
+        }
+        mock_create_markdown.return_value = lambda _text: "<p>Rendered body</p>"
+
+        with patch("centrum_blog.static_content_path", str(content_root)):
+            client = app.test_client()
+            response = client.get("/read/clean!name")
+
+        assert response.status_code == 200
+        assert b"Clean Title" in response.data
+        assert b"Rendered body" in response.data
+        assert b"Test Author" in response.data
+        mock_get_article_metadata.assert_called_once_with("clean-name")
+        mock_get_adjacent_articles.assert_called_once_with("clean-name")
+
+    @patch("centrum_blog.article.get_article_metadata", side_effect=Exception("boom"))
+    def test_read_returns_404_on_metadata_error(self, mock_get_article_metadata):
+        client = app.test_client()
+        response = client.get("/read/does-not-matter")
+
+        assert response.status_code == 404
+        mock_get_article_metadata.assert_called_once()
+
+
+class TestAboutRoute:
+    @patch("centrum_blog.mistune.create_markdown")
+    def test_about_renders_markdown_when_file_exists(
+        self,
+        mock_create_markdown,
+        tmp_path,
+    ):
+        content_root = tmp_path / "content"
+        content_root.mkdir(parents=True)
+        (content_root / "about.md").write_text("# About Me")
+
+        mock_create_markdown.return_value = lambda _text: "<h1>About Me</h1>"
+
+        with patch("centrum_blog.static_content_path", str(content_root)):
+            client = app.test_client()
+            response = client.get("/about")
+
+        assert response.status_code == 200
+        assert b"About Me" in response.data
+
+    def test_about_renders_fallback_when_file_missing(self, tmp_path):
+        content_root = tmp_path / "content"
+        content_root.mkdir(parents=True)
+
+        with patch("centrum_blog.static_content_path", str(content_root)):
+            client = app.test_client()
+            response = client.get("/about")
+
+        assert response.status_code == 200
+        assert b"About page content not found" in response.data
