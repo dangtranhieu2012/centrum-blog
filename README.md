@@ -43,7 +43,7 @@ Configuration is managed through environment variables in the `.env` file, which
 | -------------------------- | ------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `log_level`                | string | `INFO`       | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)                                                                                                               |
 | `template`                 | string | `typo`       | Template directory to use                                                                                                                                         |
-| `db_user`                  | string | `ADMIN`      | Database username                                                                                                                                                 |
+| `db_user`                  | string | _optional_   | Database username                                                                                                                                                 |
 | `db_connection_string`     | string | _(required)_ | Full SQLAlchemy URL including dialect+driver, host, and service name; should NOT include username/password (added via `db_user` and `db_secret`/`db_secret_ocid`) |
 | `db_secret`                | string | _optional_   | Plain text database password (not recommended for production)                                                                                                     |
 | `db_secret_ocid`           | string | _optional_   | OCI Vault secret OCID for database password                                                                                                                       |
@@ -111,7 +111,7 @@ webhook_secret_ocid=ocid1.vaultsecret.oc1.region.aaaaa...
    by `db_user` and `db_secret`/`db_secret_ocid`:
    - **PostgreSQL**: `postgresql://localhost:5432/dbname`
    - **MySQL**: `mysql+pymysql://localhost:3306/dbname`
-   - **SQLite**: `sqlite:///./blog.db`
+   - **SQLite**: `sqlite:///blog.db`
 
 ## Running the Application
 
@@ -329,7 +329,7 @@ The application uses a single `blog_index` table:
 
 1. Switch to a simpler database for testing (SQLite):
    ```bash
-   db_connection_string=sqlite:///./blog.db
+   db_connection_string=sqlite:///blog.db
    ```
 
 ## License

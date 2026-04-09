@@ -127,7 +127,6 @@ def about():
         markdown = mistune.create_markdown(renderer=renderer(escape=False))
         with about_file.open() as f:
             about_content = markdown(f.read())
-        print(about_content)
     else:
         # Fallback content if file doesn't exist
         about_content = "<p>About page content not found. Please add an about.md file to your content repository.</p>"
