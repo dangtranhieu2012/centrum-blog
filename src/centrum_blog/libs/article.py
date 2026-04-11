@@ -30,9 +30,13 @@ def get_articles_list(page: int, per_page: int) -> list[dict]:
     articles = []
 
     with get_db_session() as session:
-        rows = session.query(BlogIndex.path).order_by(desc(BlogIndex.updated)).offset(
-            (page - 1) * per_page
-        ).limit(per_page).all()
+        rows = (
+            session.query(BlogIndex.path)
+            .order_by(desc(BlogIndex.updated))
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .all()
+        )
 
         for row in rows:
             articles.append(get_article_metadata(row[0]))
@@ -61,21 +65,25 @@ def get_adjacent_articles(article_id: str) -> tuple[dict | None, dict | None]:
     next_article = None
 
     with get_db_session() as session:
-        current = session.query(BlogIndex.updated).filter(
-            BlogIndex.path == article_id
-        ).first()
+        current = session.query(BlogIndex.updated).filter(BlogIndex.path == article_id).first()
 
         if current:
             timestamp = current[0]
 
-            prev_row = session.query(BlogIndex.path).filter(
-                BlogIndex.updated < timestamp
-            ).order_by(desc(BlogIndex.updated)).first()
+            prev_row = (
+                session.query(BlogIndex.path)
+                .filter(BlogIndex.updated < timestamp)
+                .order_by(desc(BlogIndex.updated))
+                .first()
+            )
             prev_article = get_article_metadata(prev_row[0]) if prev_row is not None else None
 
-            next_row = session.query(BlogIndex.path).filter(
-                BlogIndex.updated > timestamp
-            ).order_by(asc(BlogIndex.updated)).first()
+            next_row = (
+                session.query(BlogIndex.path)
+                .filter(BlogIndex.updated > timestamp)
+                .order_by(asc(BlogIndex.updated))
+                .first()
+            )
             next_article = get_article_metadata(next_row[0]) if next_row is not None else None
 
     return (prev_article, next_article)

@@ -140,17 +140,17 @@ def about():
 
 @app.post("/reindex")
 def reindex():
-    header_signature = request.headers.get('X-Hub-Signature-256')
+    header_signature = request.headers.get("X-Hub-Signature-256")
     if not header_signature:
         return abort(401)
 
-    sha_name, signature = header_signature.split('=')
-    if sha_name != 'sha256':
+    sha_name, signature = header_signature.split("=")
+    if sha_name != "sha256":
         return abort(503)
 
     webhook_secret = credential.get_secret(settings.webhook_secret, settings.webhook_secret_ocid)
 
-    local_signature = hmac.new(webhook_secret.encode(), msg=request.get_data(), digestmod='sha256')
+    local_signature = hmac.new(webhook_secret.encode(), msg=request.get_data(), digestmod="sha256")
     if hmac.compare_digest(local_signature.hexdigest(), signature):
         t = threading.Thread(target=indexer.reindex, args=(static_content_path,))
         t.start()

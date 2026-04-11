@@ -18,6 +18,7 @@ from pathlib import Path
 
 reindexLock = threading.Lock()
 
+
 def reindex(static_content_path: str):
     """
     Reindex the blog posts by pulling the latest changes from the git repository and updating the database index accordingly.
@@ -94,16 +95,11 @@ def index_changes(posts_path: Path, diff_index: list):
 
                 exist = session.query(func.count(BlogIndex.id)).filter(BlogIndex.path == item).scalar()
                 if exist > 0:
-                    session.query(BlogIndex).filter(BlogIndex.path == item).update({
-                        BlogIndex.updated: datetime.fromtimestamp(mtime),
-                        BlogIndex.tags: tags
-                    })
-                else:
-                    blog_entry = BlogIndex(
-                        path=item,
-                        updated=datetime.fromtimestamp(mtime),
-                        tags=tags
+                    session.query(BlogIndex).filter(BlogIndex.path == item).update(
+                        {BlogIndex.updated: datetime.fromtimestamp(mtime), BlogIndex.tags: tags}
                     )
+                else:
+                    blog_entry = BlogIndex(path=item, updated=datetime.fromtimestamp(mtime), tags=tags)
                     session.add(blog_entry)
 
 
@@ -115,9 +111,5 @@ def index_all(posts_path: Path):
             for entry in it:
                 if entry.is_dir():
                     (mtime, tags) = get_metadata(posts_path / entry.name)
-                    blog_entry = BlogIndex(
-                        path=entry.name,
-                        updated=datetime.fromtimestamp(mtime),
-                        tags=tags
-                    )
+                    blog_entry = BlogIndex(path=entry.name, updated=datetime.fromtimestamp(mtime), tags=tags)
                     session.add(blog_entry)

@@ -66,7 +66,9 @@ class TestGetSigner:
         cached_signer = object()
         oci_helper.signer = cached_signer
 
-        with patch("centrum_blog.libs.oci_helper.oci.auth.signers.InstancePrincipalsSecurityTokenSigner") as mock_signer_cls:
+        with patch(
+            "centrum_blog.libs.oci_helper.oci.auth.signers.InstancePrincipalsSecurityTokenSigner"
+        ) as mock_signer_cls:
             result = oci_helper.get_signer()
 
         assert result is cached_signer

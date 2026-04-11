@@ -20,7 +20,7 @@ def get_secret(secret_ocid: str) -> str | None:
             return None
         get_secret_bundle_response = secrets_client.get_secret_bundle(secret_ocid)
         secret_content_base64 = get_secret_bundle_response.data.secret_bundle_content.content
-        secret_value = base64.b64decode(secret_content_base64).decode('utf-8')
+        secret_value = base64.b64decode(secret_content_base64).decode("utf-8")
 
         return secret_value
     except oci.exceptions.ServiceError as e:
