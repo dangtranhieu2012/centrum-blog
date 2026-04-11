@@ -14,11 +14,7 @@ def get_secret(secret: Optional[str] = None, secret_ocid: Optional[str] = None) 
         return ""
 
 
-def construct_authenticated_url(
-    url: str,
-    username: Optional[str] = None,
-    password: Optional[str] = None
-) -> str:
+def construct_authenticated_url(url: str, username: Optional[str] = None, password: Optional[str] = None) -> str:
     """
     Construct a URL with optional credentials.
 
@@ -50,8 +46,8 @@ def construct_authenticated_url(
 
     # URL-encode credentials to handle special characters
     # Use safe='' to encode all special characters including /:?#
-    safe_user = quote(username, safe='') if username else ""
-    safe_pass = quote(password, safe='') if password else ""
+    safe_user = quote(username, safe="") if username else ""
+    safe_pass = quote(password, safe="") if password else ""
 
     if safe_user or safe_pass:
         credential = ":".join(filter(None, [safe_user, safe_pass])) + "@"
@@ -61,13 +57,11 @@ def construct_authenticated_url(
     # Reconstruct URL with credentials
     # First remove existing credentials from netloc if present
     netloc = parsed.netloc
-    if '@' in netloc:
-        netloc = netloc.split('@', 1)[1]
+    if "@" in netloc:
+        netloc = netloc.split("@", 1)[1]
 
     # Works for http, https, and SQLAlchemy database URLs
-    auth_url = parsed._replace(
-        netloc=f"{credential}{netloc}"
-    ).geturl()
+    auth_url = parsed._replace(netloc=f"{credential}{netloc}").geturl()
 
     return auth_url
 
@@ -89,7 +83,7 @@ def get_authenticated_git_url(url: str) -> str:
     parsed = urlparse(url)
 
     # Check if the protocol is HTTP or HTTPS
-    if parsed.scheme in ['http', 'https']:
+    if parsed.scheme in ["http", "https"]:
         username = get_secret(settings.git_username, settings.git_username_secret_ocid)
         password = get_secret(settings.git_password, settings.git_password_secret_ocid)
         return construct_authenticated_url(url, username, password)

@@ -291,20 +291,17 @@ class TestIndexAll:
         posts_path = tmp_path / "posts"
 
         # Mock directory listing to return two articles
-        mock_entries = [
-            MagicMock(),
-            MagicMock()
-        ]
+        mock_entries = [MagicMock(), MagicMock()]
         mock_entries[0].is_dir.return_value = True
         mock_entries[0].name = "article-1"
         mock_entries[1].is_dir.return_value = True
         mock_entries[1].name = "article-2"
 
         # Mock get_metadata to return values
-        with patch("centrum_blog.libs.indexer.get_metadata", side_effect=[
-            (1000, ",python,testing,"),
-            (2000, ",javascript,web,")
-        ]):
+        with patch(
+            "centrum_blog.libs.indexer.get_metadata",
+            side_effect=[(1000, ",python,testing,"), (2000, ",javascript,web,")],
+        ):
             mock_session = MagicMock()
             mock_get_db_session.return_value.__enter__.return_value = mock_session
 

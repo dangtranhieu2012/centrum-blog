@@ -6,8 +6,8 @@ from centrum_blog.libs.credential import construct_authenticated_url, get_authen
 class TestGetAuthenticatedGitUrl:
     """Test cases for get_authenticated_git_url function"""
 
-    @patch('centrum_blog.libs.credential.construct_authenticated_url')
-    @patch('centrum_blog.libs.credential.get_secret')
+    @patch("centrum_blog.libs.credential.construct_authenticated_url")
+    @patch("centrum_blog.libs.credential.get_secret")
     def test_http_scheme_fetches_credentials(self, mock_get_secret, mock_construct):
         """Test HTTP(S) URLs fetch credentials and pass to construct function"""
         mock_get_secret.side_effect = ["username", "password"]
@@ -20,7 +20,7 @@ class TestGetAuthenticatedGitUrl:
         assert mock_get_secret.call_count == 2
         mock_construct.assert_called_once_with(url, "username", "password")
 
-    @patch('centrum_blog.libs.credential.get_secret')
+    @patch("centrum_blog.libs.credential.get_secret")
     def test_non_http_scheme_returns_unchanged(self, mock_get_secret):
         """Test non-HTTP(S) URLs return unchanged without fetching credentials"""
         ssh_url = "git@github.com:user/repo.git"
@@ -201,34 +201,34 @@ class TestGetSecret:
 
     def test_get_secret_with_plain_text(self):
         """Test get_secret with plain text secret"""
-        result = get_secret('plain_text_secret')
-        assert result == 'plain_text_secret'
+        result = get_secret("plain_text_secret")
+        assert result == "plain_text_secret"
 
-    @patch('centrum_blog.libs.credential.vault.get_secret')
+    @patch("centrum_blog.libs.credential.vault.get_secret")
     def test_get_secret_with_ocid(self, mock_vault_get_secret):
         """Test get_secret with OCID"""
-        mock_vault_get_secret.return_value = 'vault_secret'
-        result = get_secret(None, 'test_ocid')
-        mock_vault_get_secret.assert_called_once_with('test_ocid')
-        assert result == 'vault_secret'
+        mock_vault_get_secret.return_value = "vault_secret"
+        result = get_secret(None, "test_ocid")
+        mock_vault_get_secret.assert_called_once_with("test_ocid")
+        assert result == "vault_secret"
 
     def test_get_secret_with_none(self):
         """Test get_secret with no arguments"""
         result = get_secret()
-        assert result == ''
+        assert result == ""
 
-    @patch('centrum_blog.libs.credential.vault.get_secret')
+    @patch("centrum_blog.libs.credential.vault.get_secret")
     def test_get_secret_with_both(self, mock_vault_get_secret):
         """Test get_secret with both secret and OCID - secret should take precedence"""
-        result = get_secret('plain_secret', 'test_ocid')
+        result = get_secret("plain_secret", "test_ocid")
         # vault.get_secret should not be called since secret is provided
         mock_vault_get_secret.assert_not_called()
-        assert result == 'plain_secret'
+        assert result == "plain_secret"
 
-    @patch('centrum_blog.libs.credential.vault.get_secret')
+    @patch("centrum_blog.libs.credential.vault.get_secret")
     def test_get_secret_with_ocid_none_secret(self, mock_vault_get_secret):
         """Test get_secret with None secret and OCID"""
-        mock_vault_get_secret.return_value = 'vault_secret'
-        result = get_secret(None, 'test_ocid')
-        mock_vault_get_secret.assert_called_once_with('test_ocid')
-        assert result == 'vault_secret'
+        mock_vault_get_secret.return_value = "vault_secret"
+        result = get_secret(None, "test_ocid")
+        mock_vault_get_secret.assert_called_once_with("test_ocid")
+        assert result == "vault_secret"
