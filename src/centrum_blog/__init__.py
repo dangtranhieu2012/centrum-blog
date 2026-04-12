@@ -5,15 +5,14 @@ import json
 import logging
 import os
 import sys
-import threading
 import mistune
 import re
 
-from centrum_blog.libs import article, credential, indexer
-
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
 from centrum_blog.constants import static_content_path
-from centrum_blog.libs import article
+from centrum_blog.libs import article, credential, indexer
 from centrum_blog.libs.db import initialize_database
 from centrum_blog.libs.settings import settings
 
@@ -32,6 +31,8 @@ if "pytest" not in sys.modules and os.getenv("PYTEST_CURRENT_TEST") is None:
     indexer.reindex(static_content_path)
 
 renderer = importlib.import_module(f"centrum_blog.templates.{settings.template}.markdown_renderer").MarkdownRenderer
+
+index_executor = ThreadPoolExecutor(max_workers=10)
 
 
 def sanitize_name(name: str):
@@ -152,8 +153,7 @@ def reindex():
 
     local_signature = hmac.new(webhook_secret.encode(), msg=request.get_data(), digestmod="sha256")
     if hmac.compare_digest(local_signature.hexdigest(), signature):
-        t = threading.Thread(target=indexer.reindex, args=(static_content_path,))
-        t.start()
+        index_executor.submit(indexer.reindex, static_content_path)
         return jsonify({"status": "OK"})
     else:
         return abort(401)
