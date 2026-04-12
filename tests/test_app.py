@@ -103,11 +103,15 @@ class TestIndexRoute:
 class TestReindexEndpoint:
     """Test cases for the /reindex webhook endpoint."""
 
+    @staticmethod
+    def _build_sha256_signature(secret: str, payload: bytes) -> str:
+        return hmac.new(secret.encode(), msg=payload, digestmod=hashlib.sha256).hexdigest()
+
     @patch("centrum_blog.index_executor.submit")
     @patch("centrum_blog.credential.get_secret", return_value="test-secret")
     def test_triggers_reindex_with_valid_signature(self, mock_get_secret, mock_submit):
         payload = b'{"ref": "refs/heads/main"}'
-        signature = hmac.new(mock_get_secret.return_value.encode(), msg=payload, digestmod=hashlib.sha256).hexdigest()
+        signature = self._build_sha256_signature(mock_get_secret.return_value, payload)
         headers = {"X-Hub-Signature-256": f"sha256={signature}"}
 
         client = app.test_client()
@@ -146,6 +150,70 @@ class TestReindexEndpoint:
 
         assert response.status_code == 401
         mock_submit.assert_not_called()
+
+    @patch("centrum_blog.index_executor.submit")
+    @patch("centrum_blog.credential.get_secret", return_value="test-secret")
+    def test_returns_429_after_reaching_rate_limit(self, mock_get_secret, mock_submit):
+        payload = b'{"ref": "refs/heads/main"}'
+        signature = self._build_sha256_signature(mock_get_secret.return_value, payload)
+        headers = {"X-Hub-Signature-256": f"sha256={signature}"}
+
+        client = app.test_client()
+
+        for _ in range(5):
+            response = client.post(
+                "/reindex",
+                data=payload,
+                headers=headers,
+                environ_overrides={"REMOTE_ADDR": "10.0.0.1"},
+            )
+            assert response.status_code == 200
+
+        blocked = client.post(
+            "/reindex",
+            data=payload,
+            headers=headers,
+            environ_overrides={"REMOTE_ADDR": "10.0.0.1"},
+        )
+
+        assert blocked.status_code == 429
+        assert mock_submit.call_count == 5
+
+    @patch("centrum_blog.index_executor.submit")
+    @patch("centrum_blog.credential.get_secret", return_value="test-secret")
+    def test_rate_limit_is_scoped_per_ip(self, mock_get_secret, mock_submit):
+        payload = b'{"ref": "refs/heads/main"}'
+        signature = self._build_sha256_signature(mock_get_secret.return_value, payload)
+        headers = {"X-Hub-Signature-256": f"sha256={signature}"}
+
+        client = app.test_client()
+
+        for _ in range(5):
+            response = client.post(
+                "/reindex",
+                data=payload,
+                headers=headers,
+                environ_overrides={"REMOTE_ADDR": "10.0.0.2"},
+            )
+            assert response.status_code == 200
+
+        blocked = client.post(
+            "/reindex",
+            data=payload,
+            headers=headers,
+            environ_overrides={"REMOTE_ADDR": "10.0.0.2"},
+        )
+        assert blocked.status_code == 429
+
+        allowed_other_ip = client.post(
+            "/reindex",
+            data=payload,
+            headers=headers,
+            environ_overrides={"REMOTE_ADDR": "10.0.0.3"},
+        )
+
+        assert allowed_other_ip.status_code == 200
+        assert mock_submit.call_count == 6
 
 
 class TestReadRoute:

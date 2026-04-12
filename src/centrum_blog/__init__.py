@@ -18,6 +18,8 @@ from centrum_blog.libs.settings import settings
 
 from flask import Flask, abort, render_template, request
 from flask.json import jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 
 log_level = getattr(logging, settings.log_level.upper())
@@ -25,6 +27,8 @@ logging.basicConfig(level=log_level)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
 
 if "pytest" not in sys.modules and os.getenv("PYTEST_CURRENT_TEST") is None:
     initialize_database()
@@ -140,6 +144,7 @@ def about():
 
 
 @app.post("/reindex")
+@limiter.limit("5 per minute")
 def reindex():
     header_signature = request.headers.get("X-Hub-Signature-256")
     if not header_signature:
