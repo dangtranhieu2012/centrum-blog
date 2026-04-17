@@ -8,9 +8,11 @@ build/
 dist/
 wheels/
 *.egg-info
+.pytest_cache/
+.ruff_cache/
 
 # Virtual environments
-.venv
+.venv/
 
 # Environment variables
 .env
