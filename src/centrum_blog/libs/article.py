@@ -6,13 +6,13 @@ from pathlib import Path
 
 from sqlalchemy import func, desc, asc
 
-from centrum_blog.constants import static_content_path
+from centrum_blog.libs.settings import settings
 from centrum_blog.libs.db import get_db_session
 from centrum_blog.libs.models import BlogIndex
 
 
 def is_article_exist_on_fs(article_id: str) -> bool:
-    article_path = Path(static_content_path) / "posts" / article_id
+    article_path = Path(settings.static_content_path) / "posts" / article_id
     article_folder_exist = article_path.exists() and article_path.is_dir()
     metadata_file_exist = (article_path / "metadata.json").exists()
     content_file_exist = (article_path / "content.md").exists()
@@ -45,7 +45,7 @@ def get_articles_list(page: int, per_page: int) -> list[dict]:
 
 
 def get_article_metadata(article_id: str) -> dict[str, str | dt.date | Path]:
-    static_path = Path(static_content_path)
+    static_path = Path(settings.static_content_path)
     article_path = static_path / "posts" / article_id
 
     metadata_file = article_path / "metadata.json"

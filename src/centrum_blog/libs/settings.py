@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     template: str = "typo"
+    static_content_path: str = "content"
 
     db_user: Optional[str] = None
     db_connection_string: str = ""

@@ -2,10 +2,11 @@ import datetime as dt
 import hashlib
 import hmac
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 from centrum_blog import app, generate_pagination, sanitize_name
-from centrum_blog.constants import static_content_path
+from centrum_blog.libs.settings import settings
 from centrum_blog.libs import indexer
 
 
@@ -119,7 +120,7 @@ class TestReindexEndpoint:
 
         assert response.status_code == 200
         assert response.get_json() == {"status": "OK"}
-        mock_submit.assert_called_once_with(indexer.reindex, static_content_path)
+        mock_submit.assert_called_once_with(indexer.reindex, settings.static_content_path)
 
     @patch("centrum_blog.index_executor.submit")
     def test_returns_401_without_signature(self, mock_submit):
@@ -245,7 +246,7 @@ class TestReadRoute:
         }
         mock_create_markdown.return_value = lambda _text: "<p>Rendered body</p>"
 
-        with patch("centrum_blog.static_content_path", str(content_root)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(content_root)):
             client = app.test_client()
             response = client.get("/read/clean!name")
 
@@ -278,7 +279,7 @@ class TestAboutRoute:
 
         mock_create_markdown.return_value = lambda _text: "<h1>About Me</h1>"
 
-        with patch("centrum_blog.static_content_path", str(content_root)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(content_root)):
             client = app.test_client()
             response = client.get("/about")
 
@@ -289,9 +290,20 @@ class TestAboutRoute:
         content_root = tmp_path / "content"
         content_root.mkdir(parents=True)
 
-        with patch("centrum_blog.static_content_path", str(content_root)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(content_root)):
             client = app.test_client()
             response = client.get("/about")
 
         assert response.status_code == 200
         assert b"About page content not found" in response.data
+
+
+class TestStaticContentRoute:
+    @patch("centrum_blog.send_from_directory")
+    def test_static_content(self, mock_send_from_directory):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", "content"):
+            client = app.test_client()
+            response = client.get("/content/test.txt")
+
+        assert response.status_code == 200
+        mock_send_from_directory.assert_called_once_with("../../" / Path("content"), "test.txt")
