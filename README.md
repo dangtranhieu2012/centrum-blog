@@ -43,6 +43,7 @@ Configuration is managed through environment variables in the `.env` file, which
 | -------------------------- | ------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `log_level`                | string | `INFO`       | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)                                                                                                               |
 | `template`                 | string | `typo`       | Template directory to use                                                                                                                                         |
+| `static_content_path`      | string | `content`    | Path to the directory where the content repository is going to be downloaded relative to the root of the project                                                  |
 | `db_user`                  | string | _optional_   | Database username                                                                                                                                                 |
 | `db_connection_string`     | string | _(required)_ | Full SQLAlchemy URL including dialect+driver, host, and service name; should NOT include username/password (added via `db_user` and `db_secret`/`db_secret_ocid`) |
 | `db_secret`                | string | _optional_   | Plain text database password (not recommended for production)                                                                                                     |
@@ -120,7 +121,7 @@ webhook_secret_ocid=ocid1.vaultsecret.oc1.region.aaaaa...
 Start the Flask development server:
 
 ```bash
-uv run flask --app src.centrum_blog run
+uv run flask --app src.centrum_blog run --reload
 ```
 
 The blog will be available at `http://localhost:5000`

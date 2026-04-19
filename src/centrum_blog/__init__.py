@@ -11,12 +11,11 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from centrum_blog.constants import static_content_path
 from centrum_blog.libs import article, credential, indexer
 from centrum_blog.libs.db import initialize_database
 from centrum_blog.libs.settings import settings
 
-from flask import Flask, abort, render_template, request
+from flask import Flask, abort, render_template, request, send_from_directory
 from flask.json import jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -32,7 +31,7 @@ limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
 
 if "pytest" not in sys.modules and os.getenv("PYTEST_CURRENT_TEST") is None:
     initialize_database()
-    indexer.reindex(static_content_path)
+    indexer.reindex(settings.static_content_path)
 
 renderer = importlib.import_module(f"centrum_blog.templates.{settings.template}.markdown_renderer").MarkdownRenderer
 
@@ -93,7 +92,7 @@ def read(article_id: str):
     try:
         metadata = article.get_article_metadata(article_id)
 
-        author_metadata_file = Path(static_content_path) / f"authors/{metadata['author']}/metadata.json"
+        author_metadata_file = Path(settings.static_content_path) / f"authors/{metadata['author']}/metadata.json"
         author_metadata = {}
         with author_metadata_file.open() as f:
             author_metadata = json.load(f)
@@ -126,7 +125,7 @@ def read(article_id: str):
 @app.route("/about")
 def about():
     about_content = ""
-    about_file = Path(static_content_path) / "about.md"
+    about_file = Path(settings.static_content_path) / "about.md"
 
     if about_file.exists():
         markdown = mistune.create_markdown(renderer=renderer(escape=False))
@@ -141,6 +140,11 @@ def about():
         now=dt.date.today(),
         about_content=about_content,
     )
+
+
+@app.route("/content/<path:filename>")
+def static_content(filename: Path):
+    return send_from_directory("../../" / Path(settings.static_content_path), filename)
 
 
 @app.post("/reindex")
@@ -158,7 +162,7 @@ def reindex():
 
     local_signature = hmac.new(webhook_secret.encode(), msg=request.get_data(), digestmod="sha256")
     if hmac.compare_digest(local_signature.hexdigest(), signature):
-        index_executor.submit(indexer.reindex, static_content_path)
+        index_executor.submit(indexer.reindex, settings.static_content_path)
         return jsonify({"status": "OK"})
     else:
         return abort(401)

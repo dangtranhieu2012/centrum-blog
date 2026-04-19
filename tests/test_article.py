@@ -26,7 +26,7 @@ class TestIsArticleExistOnFs:
         (article_dir / "metadata.json").write_text(json.dumps({"title": "Test"}))
         (article_dir / "content.md").write_text("# Test Article")
 
-        with patch("centrum_blog.libs.article.static_content_path", str(tmp_path)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
             result = is_article_exist_on_fs("test-article")
 
         assert result is True
@@ -36,7 +36,7 @@ class TestIsArticleExistOnFs:
         posts_dir = tmp_path / "posts"
         posts_dir.mkdir(parents=True)
 
-        with patch("centrum_blog.libs.article.static_content_path", str(tmp_path)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
             result = is_article_exist_on_fs("nonexistent-article")
 
         assert result is False
@@ -49,7 +49,7 @@ class TestIsArticleExistOnFs:
         # Create a file instead of a directory
         (posts_dir / "file-not-folder").write_text("content")
 
-        with patch("centrum_blog.libs.article.static_content_path", str(tmp_path)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
             result = is_article_exist_on_fs("file-not-folder")
 
         assert result is False
@@ -63,7 +63,7 @@ class TestIsArticleExistOnFs:
         # Create only content.md, missing metadata.json
         (article_dir / "content.md").write_text("# Article")
 
-        with patch("centrum_blog.libs.article.static_content_path", str(tmp_path)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
             result = is_article_exist_on_fs("incomplete-article")
 
         assert result is False
@@ -77,7 +77,7 @@ class TestIsArticleExistOnFs:
         # Create only metadata.json, missing content.md
         (article_dir / "metadata.json").write_text(json.dumps({"title": "Test"}))
 
-        with patch("centrum_blog.libs.article.static_content_path", str(tmp_path)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
             result = is_article_exist_on_fs("no-content-article")
 
         assert result is False
@@ -90,7 +90,7 @@ class TestIsArticleExistOnFs:
 
         # Create only the directory, no files
 
-        with patch("centrum_blog.libs.article.static_content_path", str(tmp_path)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
             result = is_article_exist_on_fs("empty-article")
 
         assert result is False
@@ -236,7 +236,7 @@ class TestGetArticleMetadata:
 
         os.utime(article_dir, (1000, 1000))
 
-        with patch("centrum_blog.libs.article.static_content_path", str(tmp_path)):
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
             result = get_article_metadata("test-article")
 
         assert result["title"] == "Test Article"

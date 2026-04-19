@@ -1,1 +1,0 @@
-static_content_path = "src/centrum_blog/static/content"

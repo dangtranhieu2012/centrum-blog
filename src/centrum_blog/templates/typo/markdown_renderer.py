@@ -1,6 +1,5 @@
 import mistune
 
-from flask import url_for
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name, TextLexer
 from pygments.formatters import html
@@ -29,9 +28,9 @@ class MarkdownRenderer(mistune.HTMLRenderer):
 
     def image(self, text, url, title=None):
         if self._article_id == "":
-            src = url_for("static", filename=f"content/images/{url}")
+            src = f"/content/images/{url}"
         else:
-            src = url_for("static", filename=f"content/posts/{self._article_id}/{url}")
+            src = f"/content/posts/{self._article_id}/{url}"
 
         s = f'<figure><img src="{src}" alt="{text}"'
         if title:
