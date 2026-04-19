@@ -282,7 +282,7 @@ Example `about.md` content:
 ```markdown
 <div class="media-left">
   <figure class="image is-128x128">
-    <img src="/static/content/images/your-avatar.png" alt="Author Avatar" class="is-rounded" />
+    <img src="/content/images/your-avatar.png" alt="Author Avatar" class="is-rounded" />
   </figure>
 </div>
 <div class="media-content">
