@@ -8,7 +8,7 @@ from sqlalchemy import func
 from git.exc import NoSuchPathError
 
 from centrum_blog.libs import credential
-from centrum_blog.libs.article import is_article_exist_on_fs
+from centrum_blog.libs.article import is_article_exist_on_fs, sanitize_tag
 from centrum_blog.libs.db import get_db_session
 from centrum_blog.libs.models import BlogIndex
 from centrum_blog.libs.settings import settings
@@ -56,9 +56,11 @@ def get_metadata(entry_path: Path) -> tuple[float, str]:
     mtime = entry_path.stat().st_mtime
 
     metadata_path = entry_path / "metadata.json"
+
     tags = []
     with metadata_path.open() as f:
         tags = json.load(f).get("tags", [])
+    tags = [sanitize_tag(tag) for tag in tags]
     tags = "," + ",".join(tags) + "," if len(tags) > 0 else ""
 
     return (mtime, tags)

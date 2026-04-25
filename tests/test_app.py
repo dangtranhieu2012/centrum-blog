@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from centrum_blog import app, generate_pagination, sanitize_name
+from centrum_blog import app, generate_pagination, get_per_page, sanitize_name
 from centrum_blog.libs.settings import settings
 from centrum_blog.libs import indexer
 
@@ -37,6 +37,24 @@ class TestGeneratePagination:
         result = generate_pagination(current_page=2, total_pages=3)
 
         assert result == [1, 2, 3]
+
+
+class TestGetPerPage:
+    def test_returns_default_when_no_cookie_present(self):
+        with app.test_request_context():
+            assert get_per_page() == 10
+
+    def test_returns_requested_value_when_valid(self):
+        with app.test_request_context(headers={"Cookie": "per_page=20"}):
+            assert get_per_page() == 20
+
+    def test_returns_default_for_unsupported_numeric_value(self):
+        with app.test_request_context(headers={"Cookie": "per_page=50"}):
+            assert get_per_page() == 10
+
+    def test_returns_default_for_non_numeric_value(self):
+        with app.test_request_context(headers={"Cookie": "per_page=invalid"}):
+            assert get_per_page() == 10
 
 
 class TestIndexRoute:
@@ -307,3 +325,74 @@ class TestStaticContentRoute:
 
         assert response.status_code == 200
         mock_send_from_directory.assert_called_once_with("../../" / Path("content"), "test.txt")
+
+
+class TestTagRoute:
+    """Test cases for the /tag routes."""
+
+    @patch("centrum_blog.generate_pagination", return_value=[1])
+    @patch("centrum_blog.article.get_articles_list")
+    @patch("centrum_blog.article.get_total_pages", return_value=1)
+    def test_tag_route_with_only_tag(
+        self,
+        mock_get_total_pages,
+        mock_get_articles_list,
+        mock_generate_pagination,
+    ):
+        """Test /tag/<tag> route defaults to page 1."""
+        mock_get_articles_list.return_value = [
+            {
+                "article_id": "python-post",
+                "title": "Python Post",
+                "summary": "Summary",
+                "published": dt.date(2026, 1, 1),
+            }
+        ]
+        client = app.test_client()
+        response = client.get("/tag/python")
+
+        assert response.status_code == 200
+        mock_get_total_pages.assert_called_once_with(10, tag="python")
+        mock_get_articles_list.assert_called_once_with(page=1, per_page=10, tag="python")
+        mock_generate_pagination.assert_called_once_with(1, 1)
+
+    @patch("centrum_blog.generate_pagination", return_value=[1, 2])
+    @patch("centrum_blog.article.get_articles_list")
+    @patch("centrum_blog.article.get_total_pages", return_value=2)
+    def test_tag_route_with_tag_and_page(
+        self,
+        mock_get_total_pages,
+        mock_get_articles_list,
+        mock_generate_pagination,
+    ):
+        """Test /tag/<tag>/<page> route passes correct page number."""
+        mock_get_articles_list.return_value = [
+            {
+                "article_id": "testing-post",
+                "title": "Testing Post Page 2",
+                "summary": "Summary",
+                "published": dt.date(2026, 1, 1),
+            }
+        ]
+        client = app.test_client()
+        response = client.get("/tag/testing/2")
+
+        assert response.status_code == 200
+        mock_get_total_pages.assert_called_once_with(10, tag="testing")
+        mock_get_articles_list.assert_called_once_with(page=2, per_page=10, tag="testing")
+        mock_generate_pagination.assert_called_once_with(2, 2)
+
+    @patch("centrum_blog.article.get_articles_list")
+    @patch("centrum_blog.article.get_total_pages", return_value=1)
+    def test_tag_route_returns_404_when_page_exceeds_total_pages(
+        self,
+        mock_get_total_pages,
+        mock_get_articles_list,
+    ):
+        """Test /tag/<tag>/<page> returns 404 when page is invalid."""
+        client = app.test_client()
+        response = client.get("/tag/python/2")
+
+        assert response.status_code == 404
+        mock_get_total_pages.assert_called_once_with(10, tag="python")
+        mock_get_articles_list.assert_not_called()

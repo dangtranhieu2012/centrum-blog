@@ -5,7 +5,7 @@
     <header class="mb-6">
       <div class="is-flex is-align-items-center mb-5 tags-list">
         {% for tag in tags %}
-        <span class="tag-item">{{ tag }}</span>
+        <a href="/tag/{{ tag|e }}"><span class="tag-item">{{ tag }}<span></a>
         {% endfor %}
       </div>
       <h1 class="title is-size-1 is-italic-title mb-6">{{ title }}</h1>

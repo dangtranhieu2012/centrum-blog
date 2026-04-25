@@ -11,6 +11,10 @@ from centrum_blog.libs.db import get_db_session
 from centrum_blog.libs.models import BlogIndex
 
 
+def sanitize_tag(tag: str):
+    return tag.replace(",", "-").lower()
+
+
 def is_article_exist_on_fs(article_id: str) -> bool:
     article_path = Path(settings.static_content_path) / "posts" / article_id
     article_folder_exist = article_path.exists() and article_path.is_dir()
@@ -19,24 +23,27 @@ def is_article_exist_on_fs(article_id: str) -> bool:
     return article_folder_exist and metadata_file_exist and content_file_exist
 
 
-def get_total_pages(per_page: int) -> int:
+def get_total_pages(per_page: int, tag: str | None = None) -> int:
     with get_db_session() as session:
-        total_articles = session.query(func.count(BlogIndex.id)).scalar()
+        query = session.query(func.count(BlogIndex.id))
+        if tag:
+            tag = sanitize_tag(tag)
+            query = query.filter(BlogIndex.tags.like(f"%,{tag},%"))
+        total_articles = query.scalar() or 0
 
     return math.ceil(total_articles / per_page) if total_articles > 0 else 1
 
 
-def get_articles_list(page: int, per_page: int) -> list[dict]:
+def get_articles_list(page: int, per_page: int, tag: str | None = None) -> list[dict]:
     articles = []
 
     with get_db_session() as session:
-        rows = (
-            session.query(BlogIndex.path)
-            .order_by(desc(BlogIndex.updated))
-            .offset((page - 1) * per_page)
-            .limit(per_page)
-            .all()
-        )
+        query = session.query(BlogIndex.path)
+        if tag:
+            tag = sanitize_tag(tag)
+            query = query.filter(BlogIndex.tags.like(f"%,{tag},%"))
+
+        rows = query.order_by(desc(BlogIndex.updated)).offset((page - 1) * per_page).limit(per_page).all()
 
         for row in rows:
             articles.append(get_article_metadata(row[0]))

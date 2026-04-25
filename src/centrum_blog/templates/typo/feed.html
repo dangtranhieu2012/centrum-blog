@@ -3,10 +3,17 @@
   <div class="container is-max-desktop">
     <!-- Page Header -->
     <header class="section p-0">
-      <h1 class="title is-size-1 is-italic-title mb-2">Selected Chronology</h1>
+      <h1 class="title is-size-1 is-italic-title mb-2">
+        {% if tag %}
+          Browsing by <span class="tags-list tag-item">{{ tag }}</span>
+        {% else %}
+          Selected Chronology
+        {% endif %}
+      </h1>
       <p class="page-subtitle">
-        A curated selection of my recent writings. I hope you find something useful out of these thoughts and
-        observations.
+        A curated selection of my recent writings{% if tag %} tagged with
+        <span class="tags-list tag-item">{{ tag }}</span>{% endif %}.
+        I hope you find something useful out of these thoughts and observations.
       </p>
     </header>
     <!-- Blog Feed -->
@@ -37,8 +44,10 @@
         </div>
         <div class="column is-narrow">
           <nav aria-label="pagination" class="pagination is-small" role="navigation">
-            <a class="pagination-previous" href="/1"><span class="material-symbols-outlined">chevron_left</span></a>
-            <a class="pagination-next" href="/0"><span class="material-symbols-outlined">chevron_right</span></a>
+            <a class="pagination-previous" href="/{% if tag %}tag/{{ tag|e }}/{% endif %}1"><span class="material-symbols-outlined">chevron_left</span></a>
+            <a class="pagination-next" href="/{% if tag %}tag/{{ tag|e }}/{% endif %}0">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </a>
             <ul class="pagination-list">
               {% for page in pages %}
               <li>
@@ -48,7 +57,7 @@
                 <a
                   aria-label="Go to page {{ page }}" {{ 'aria-current="page"' if page == current_page else '' }}
                   class="pagination-link {{ 'is-current' if page == current_page else '' }}"
-                  href="/{{ page }}"
+                  href="/{% if tag %}tag/{{ tag|e }}/{% endif %}{{ page }}"
                 >{{ page }}</a>
                 {% endif %}
               </li>
