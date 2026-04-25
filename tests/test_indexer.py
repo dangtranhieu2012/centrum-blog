@@ -98,14 +98,14 @@ class TestIndexerReindex:
 class TestGetMetadata:
     """Test cases for the indexer.get_metadata function."""
 
-    def test_get_metadata_returns_mtime_and_tags(self, tmp_path):
+    def test_get_metadata_returns_mtime_and_sanitized_tags(self, tmp_path):
         """Test that get_metadata reads metadata file and returns mtime and tags."""
         posts_dir = tmp_path / "posts"
         article_dir = posts_dir / "test-article"
         article_dir.mkdir(parents=True)
 
         # Create metadata.json with tags
-        metadata = {"tags": ["python", "testing", "unit"]}
+        metadata = {"tags": ["Python", "Web,Dev", "UNIT Test"]}
         metadata_file = article_dir / "metadata.json"
         metadata_file.write_text(json.dumps(metadata))
 
@@ -117,7 +117,7 @@ class TestGetMetadata:
         # Should return (mtime, tags) tuple
         assert len(result) == 2
         assert result[0] == 1000  # mtime should match
-        assert result[1] == ",python,testing,unit,"  # tags formatted correctly
+        assert result[1] == ",python,web-dev,unit test,"  # tags should be sanitized
 
     def test_get_metadata_handles_empty_tags(self, tmp_path):
         """Test get_metadata when tags list is empty."""

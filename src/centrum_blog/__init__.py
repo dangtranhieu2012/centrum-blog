@@ -42,6 +42,13 @@ def sanitize_name(name: str):
     return re.sub(r"[^a-zA-Z0-9\-_]", "-", name)
 
 
+def get_per_page() -> int:
+    per_page = request.cookies.get("per_page", "10")
+    if per_page not in ["10", "20"]:
+        per_page = "10"
+    return int(per_page)
+
+
 def generate_pagination(current_page: int, total_pages: int) -> list[int | str]:
     pagination = []
 
@@ -63,9 +70,7 @@ def generate_pagination(current_page: int, total_pages: int) -> list[int | str]:
 @app.route("/")
 @app.route("/<int:page>")
 def index(page: int = 1):
-    per_page = request.cookies.get("per_page", "10")
-    if per_page not in ["10", "20"]:
-        per_page = "10"
+    per_page = get_per_page()
 
     total_pages = article.get_total_pages(int(per_page))
     if page == 0:
@@ -76,7 +81,7 @@ def index(page: int = 1):
     articles = article.get_articles_list(page=page, per_page=int(per_page))
 
     return render_template(
-        f"{settings.template}/index.html",
+        f"{settings.template}/feed.html",
         now=dt.date.today(),
         per_page=per_page,
         articles=articles,
@@ -139,6 +144,30 @@ def about():
         f"{settings.template}/about.html",
         now=dt.date.today(),
         about_content=about_content,
+    )
+
+
+@app.route("/tag/<tag>")
+@app.route("/tag/<tag>/<int:page>")
+def tag(tag: str, page: int = 1):
+    per_page = get_per_page()
+    total_pages = article.get_total_pages(per_page, tag=tag)
+
+    if page == 0:
+        page = total_pages
+    elif page > total_pages:
+        abort(404)
+
+    articles = article.get_articles_list(page=page, per_page=per_page, tag=tag)
+
+    return render_template(
+        f"{settings.template}/feed.html",
+        now=dt.date.today(),
+        tag=tag,
+        per_page=per_page,
+        articles=articles,
+        current_page=page,
+        pages=generate_pagination(page, total_pages),
     )
 
 

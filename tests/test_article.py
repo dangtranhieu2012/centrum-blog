@@ -9,7 +9,21 @@ from centrum_blog.libs.article import (
     get_articles_list,
     get_total_pages,
     is_article_exist_on_fs,
+    sanitize_tag,
 )
+
+
+class TestSanitizeTag:
+    """Test cases for sanitize_tag function"""
+
+    def test_sanitize_tag_converts_to_lowercase(self):
+        assert sanitize_tag("Python") == "python"
+
+    def test_sanitize_tag_replaces_comma_with_hyphen(self):
+        assert sanitize_tag("Web,Design") == "web-design"
+
+    def test_sanitize_tag_handles_mixed_case_and_commas(self):
+        assert sanitize_tag("Machine Learning, AI") == "machine learning- ai"
 
 
 class TestIsArticleExistOnFs:
@@ -193,6 +207,27 @@ class TestGetTotalPages:
         # Assert: 15 articles / 5 per_page = 3
         assert result == 3
 
+    @patch("centrum_blog.libs.article.get_db_session")
+    def test_get_total_pages_with_tag(self, mock_get_db_session):
+        """Test total pages calculation with a specific tag filter."""
+        mock_session = MagicMock()
+        mock_query = MagicMock()
+        mock_session.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.scalar.return_value = 15
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+
+        # Execute with a tag that needs sanitization
+        result = get_total_pages(per_page=10, tag="Web,Design")
+
+        # Assert: 15 articles / 10 per_page = 1.5, ceil = 2
+        assert result == 2
+
+        # Verify the filter expression directly rather than stringifying it
+        mock_query.filter.assert_called_once()
+        filter_expr = mock_query.filter.call_args[0][0]
+        assert filter_expr.right.value == "%,web-design,%"
+
 
 class TestGetArticlesList:
     """Test cases for get_articles_list function."""
@@ -220,6 +255,83 @@ class TestGetArticlesList:
         ]
         mock_get_article_metadata.assert_any_call("article-1")
         mock_get_article_metadata.assert_any_call("article-2")
+
+    @patch("centrum_blog.libs.article.get_article_metadata")
+    @patch("centrum_blog.libs.article.get_db_session")
+    def test_get_articles_list_with_tag(
+        self,
+        mock_get_db_session,
+        mock_get_article_metadata,
+    ):
+        """Test that get_articles_list correctly applies the tag filter."""
+        mock_session = MagicMock()
+        mock_query = MagicMock()
+        # Chain the query methods
+        mock_session.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.order_by.return_value = mock_query
+        mock_query.offset.return_value = mock_query
+        mock_query.limit.return_value = mock_query
+        mock_query.all.return_value = [("tagged-article",)]
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+        mock_get_article_metadata.return_value = {"article_id": "tagged-article"}
+
+        get_articles_list(page=1, per_page=10, tag="Python")
+
+        mock_query.filter.assert_called_once()
+        filter_expr = mock_query.filter.call_args[0][0]
+        assert filter_expr.right.value == "%,python,%"
+
+    @patch("centrum_blog.libs.article.get_article_metadata")
+    @patch("centrum_blog.libs.article.get_db_session")
+    def test_get_articles_list_with_tag_and_pagination(
+        self,
+        mock_get_db_session,
+        mock_get_article_metadata,
+    ):
+        """Test that get_articles_list applies both tag filter and pagination correctly."""
+        mock_session = MagicMock()
+        mock_query = MagicMock()
+        mock_session.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.order_by.return_value = mock_query
+        mock_query.offset.return_value = mock_query
+        mock_query.limit.return_value = mock_query
+        mock_query.all.return_value = [("tagged-article",)]
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+        mock_get_article_metadata.return_value = {"article_id": "tagged-article"}
+
+        # Test page 2 with 5 per page: offset should be 5
+        get_articles_list(page=2, per_page=5, tag="testing")
+
+        filter_expr = mock_query.filter.call_args[0][0]
+        assert filter_expr.right.value == "%,testing,%"
+        mock_query.offset.assert_called_once_with(5)
+        mock_query.limit.assert_called_once_with(5)
+        mock_get_article_metadata.assert_called_once_with("tagged-article")
+
+    @patch("centrum_blog.libs.article.get_article_metadata")
+    @patch("centrum_blog.libs.article.get_db_session")
+    def test_get_articles_list_with_non_existent_tag(
+        self,
+        mock_get_db_session,
+        mock_get_article_metadata,
+    ):
+        """Test that get_articles_list returns an empty list when no articles match the tag."""
+        mock_session = MagicMock()
+        mock_query = MagicMock()
+        mock_session.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.order_by.return_value = mock_query
+        mock_query.offset.return_value = mock_query
+        mock_query.limit.return_value = mock_query
+        mock_query.all.return_value = []
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+
+        result = get_articles_list(page=1, per_page=10, tag="nonexistent")
+
+        assert result == []
+        mock_get_article_metadata.assert_not_called()
 
 
 class TestGetArticleMetadata:
