@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Between Code and Craft</title>
+    <title>{{ blog_title }}</title>
     <!-- Bulma CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css" rel="stylesheet" />
     <link href="{{ url_for('static', filename='styles/code-hili.css') }}" rel="stylesheet" />
@@ -26,7 +26,7 @@
     <nav aria-label="main navigation" class="navbar is-fixed-top" role="navigation">
       <div class="container">
         <div class="navbar-brand">
-          <a class="navbar-item" href="/">Between Code and Craft</a>
+          <a class="navbar-item" href="/">{{ blog_title }}</a>
         </div>
         <div class="navbar-menu" id="navbarMenu">
           <div class="navbar-end">
