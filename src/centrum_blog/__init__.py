@@ -4,22 +4,20 @@ import importlib
 import json
 import logging
 import os
-import sys
-import mistune
 import re
-
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from centrum_blog.libs import article, credential, indexer
-from centrum_blog.libs.db import initialize_database
-from centrum_blog.libs.settings import settings
-
+import mistune
 from flask import Flask, abort, render_template, request, send_from_directory
 from flask.json import jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+from centrum_blog.libs import article, credential, indexer
+from centrum_blog.libs.db import initialize_database
+from centrum_blog.libs.settings import settings
 
 log_level = getattr(logging, settings.log_level.upper())
 logging.basicConfig(level=log_level)
@@ -47,6 +45,16 @@ def get_per_page() -> int:
     if per_page not in ["10", "20"]:
         per_page = "10"
     return int(per_page)
+
+
+def get_blog_title() -> str:
+    blog_metadata_path = Path(settings.static_content_path) / "metadata.json"
+    if blog_metadata_path.exists():
+        with open(blog_metadata_path, "r") as f:
+            metadata = json.load(f)
+            if "title" in metadata:
+                return metadata["title"]
+    return "Blog"
 
 
 def generate_pagination(current_page: int, total_pages: int) -> list[int | str]:
@@ -80,8 +88,11 @@ def index(page: int = 1):
 
     articles = article.get_articles_list(page=page, per_page=int(per_page))
 
+    blog_title = get_blog_title()
+
     return render_template(
         f"{settings.template}/feed.html",
+        blog_title=blog_title,
         now=dt.date.today(),
         per_page=per_page,
         articles=articles,
@@ -110,8 +121,11 @@ def read(article_id: str):
 
         adjacent_articles = article.get_adjacent_articles(article_id)
 
+        blog_title = get_blog_title()
+
         return render_template(
             f"{settings.template}/post.html",
+            blog_title=blog_title,
             now=dt.date.today(),
             published=metadata["published"],
             author=author_metadata["name"],
@@ -140,8 +154,11 @@ def about():
         # Fallback content if file doesn't exist
         about_content = "<p>About page content not found. Please add an about.md file to your content repository.</p>"
 
+    blog_title = get_blog_title()
+
     return render_template(
         f"{settings.template}/about.html",
+        blog_title=blog_title,
         now=dt.date.today(),
         about_content=about_content,
     )
@@ -160,8 +177,11 @@ def tag(tag: str, page: int = 1):
 
     articles = article.get_articles_list(page=page, per_page=per_page, tag=tag)
 
+    blog_title = get_blog_title()
+
     return render_template(
         f"{settings.template}/feed.html",
+        blog_title=blog_title,
         now=dt.date.today(),
         tag=tag,
         per_page=per_page,

@@ -5,9 +5,15 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from centrum_blog import app, generate_pagination, get_per_page, sanitize_name
-from centrum_blog.libs.settings import settings
+from centrum_blog import (
+    app,
+    generate_pagination,
+    get_blog_title,
+    get_per_page,
+    sanitize_name,
+)
 from centrum_blog.libs import indexer
+from centrum_blog.libs.settings import settings
 
 
 class TestSanitizeName:
@@ -20,6 +26,57 @@ class TestSanitizeName:
         result = sanitize_name("safe_name-123")
 
         assert result == "safe_name-123"
+
+
+class TestGetBlogTitle:
+    """Test cases for the get_blog_title function."""
+
+    def test_returns_title_from_metadata_when_file_exists(self, tmp_path):
+        """Test that it returns the title from metadata.json when file exists with title key."""
+        metadata_path = tmp_path / "metadata.json"
+        metadata_path.write_text(json.dumps({"title": "My Awesome Blog"}))
+
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
+            result = get_blog_title()
+
+        assert result == "My Awesome Blog"
+
+    def test_returns_default_when_metadata_file_exists_but_no_title_key(self, tmp_path):
+        """Test that it returns 'Blog' when metadata.json exists but has no title key."""
+        metadata_path = tmp_path / "metadata.json"
+        metadata_path.write_text(json.dumps({"description": "A blog about everything"}))
+
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
+            result = get_blog_title()
+
+        assert result == "Blog"
+
+    def test_returns_default_when_metadata_file_does_not_exist(self, tmp_path):
+        """Test that it returns 'Blog' when metadata.json file does not exist."""
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
+            result = get_blog_title()
+
+        assert result == "Blog"
+
+    def test_returns_title_with_special_characters(self, tmp_path):
+        """Test that it correctly handles titles with special characters."""
+        metadata_path = tmp_path / "metadata.json"
+        metadata_path.write_text(json.dumps({"title": "Blog!@#$%^&*() 2026"}))
+
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
+            result = get_blog_title()
+
+        assert result == "Blog!@#$%^&*() 2026"
+
+    def test_returns_empty_string_title(self, tmp_path):
+        """Test that it returns empty string when title key is empty."""
+        metadata_path = tmp_path / "metadata.json"
+        metadata_path.write_text(json.dumps({"title": ""}))
+
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(tmp_path)):
+            result = get_blog_title()
+
+        assert result == ""
 
 
 class TestGeneratePagination:
