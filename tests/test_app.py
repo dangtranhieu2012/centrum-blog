@@ -381,7 +381,23 @@ class TestStaticContentRoute:
             response = client.get("/content/test.txt")
 
         assert response.status_code == 200
-        mock_send_from_directory.assert_called_once_with("../../" / Path("content"), "test.txt")
+        called_dir = mock_send_from_directory.call_args[0][0]
+        called_filename = mock_send_from_directory.call_args[0][1]
+        # The content dir is resolved as ../../content relative to the package
+        expected_dir = (Path(__file__).parent.parent / "src" / "centrum_blog" / ".." / ".." / "content").resolve()
+        assert Path(called_dir).resolve() == expected_dir
+        assert called_filename == "test.txt"
+
+    def test_static_content_rejects_path_traversal(self, tmp_path):
+        content_dir = tmp_path / "content"
+        content_dir.mkdir(parents=True)
+        (content_dir / "safe.txt").write_text("ok")
+
+        with patch("centrum_blog.libs.settings.settings.static_content_path", str(content_dir)):
+            client = app.test_client()
+            response = client.get("/content/../etc/passwd")
+
+        assert response.status_code == 404
 
 
 class TestTagRoute:

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import mistune
 from flask import Flask, abort, render_template, request, send_from_directory
+from werkzeug.security import safe_join
 from flask.json import jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -192,8 +193,13 @@ def tag(tag: str, page: int = 1):
 
 
 @app.route("/content/<path:filename>")
-def static_content(filename: Path):
-    return send_from_directory("../../" / Path(settings.static_content_path), filename)
+def static_content(filename: str):
+    # static_content_path is relative to the project root (two levels up from this package)
+    content_dir = (Path(__file__).parent.parent.parent / settings.static_content_path).resolve()
+    safe_path = safe_join(str(content_dir), filename)
+    if safe_path is None:
+        abort(404)
+    return send_from_directory(str(content_dir), filename)
 
 
 @app.post("/reindex")
