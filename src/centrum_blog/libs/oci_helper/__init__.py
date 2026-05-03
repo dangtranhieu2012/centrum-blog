@@ -31,7 +31,7 @@ def get_config() -> dict:
             logger.error("OCI config file or API key file not found.")
             return {}
         except Exception as e:
-            logger.error(f"Error loading OCI config profile '{profile_name}': {e}")
+            logger.error("Error loading OCI config profile '%s': %s", profile_name, e)
             return {}
 
     config = ret
@@ -49,7 +49,7 @@ def get_signer() -> oci.auth.signers.InstancePrincipalsSecurityTokenSigner | Non
     try:
         ret = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
     except Exception as e:
-        logger.error(f"An unexpected error occurred while getting signer: {e}")
+        logger.error("An unexpected error occurred while getting signer: %s", e)
         return None
 
     signer = ret
@@ -80,5 +80,5 @@ def get_client(client_initializer: Callable, **kwargs):
             client = client_initializer(config=config_or_signer, **kwargs)
         return client
     except Exception as e:
-        logger.error(f"An unexpected error occurred while initializing client: {e}")
+        logger.error("An unexpected error occurred while initializing client: %s", e)
         return None

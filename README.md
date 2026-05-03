@@ -124,7 +124,7 @@ Start the Flask development server:
 uv run flask --app src.centrum_blog run --reload
 ```
 
-The blog will be available at `http://localhost:5000`
+The blog will be available at `http://127.0.0.1:5000`
 
 ### Production Server
 

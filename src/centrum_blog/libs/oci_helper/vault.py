@@ -24,11 +24,11 @@ def get_secret(secret_ocid: str) -> str | None:
 
         return secret_value
     except oci.exceptions.ServiceError as e:
-        logger.error(f"Error accessing secret: {e}")
+        logger.error("Error accessing secret: %s", e)
         return None
     except AuthConfigException as e:
-        logger.error(f"OCI configuration error: {e}")
+        logger.error("OCI configuration error: %s", e)
         return None
     except Exception as e:
-        logger.error(f"An unexpected error occurred while retrieving secret: {e}")
+        logger.error("An unexpected error occurred while retrieving secret: %s", e)
         return None

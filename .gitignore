@@ -21,4 +21,4 @@ wheels/
 content/
 
 # Database file
-*.sqlite3
+*.sqlite

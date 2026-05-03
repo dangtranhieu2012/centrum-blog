@@ -2,6 +2,7 @@ import git
 import json
 import os
 import subprocess
+import sys
 import threading
 
 from sqlalchemy import func
@@ -42,7 +43,7 @@ def reindex(static_content_path: str):
             old_head = None
 
         p = Path(__file__).parent.parent / "git-restore-mtime"
-        subprocess.run(["python3", p], cwd=static_content_path)
+        subprocess.run([sys.executable, p], cwd=static_content_path)
 
         if old_head is not None:
             if old_head != repo.head.commit:
