@@ -17,6 +17,9 @@ body {
   color: var(--text-main);
   font-family: var(--bulma-body-family);
 }
+strong {
+  color: var(--text-main);
+}
 .title,
 .subtitle,
 h1,
