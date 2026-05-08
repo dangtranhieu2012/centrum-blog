@@ -1,11 +1,12 @@
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
 
-Base = declarative_base()
+class DBBase(DeclarativeBase):
+    pass
 
 
-class BlogIndex(Base):
+class BlogIndex(DBBase):
     __tablename__ = "blog_index"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

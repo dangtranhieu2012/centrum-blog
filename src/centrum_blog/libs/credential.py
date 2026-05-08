@@ -1,11 +1,10 @@
-from typing import Optional
 from urllib.parse import quote, urlparse
 
 from centrum_blog.libs.settings import settings
 from centrum_blog.libs.oci_helper import vault
 
 
-def get_secret(secret: Optional[str] = None, secret_ocid: Optional[str] = None) -> str:
+def get_secret(secret: str | None = None, secret_ocid: str | None = None) -> str:
     if secret is not None:
         return secret
     elif secret_ocid is not None:
@@ -14,7 +13,7 @@ def get_secret(secret: Optional[str] = None, secret_ocid: Optional[str] = None) 
         return ""
 
 
-def construct_authenticated_url(url: str, username: Optional[str] = None, password: Optional[str] = None) -> str:
+def construct_authenticated_url(url: str, username: str | None = None, password: str | None = None) -> str:
     """
     Construct a URL with optional credentials.
 

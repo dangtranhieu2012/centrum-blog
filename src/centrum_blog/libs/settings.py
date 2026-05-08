@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,19 +9,19 @@ class Settings(BaseSettings):
     template: str = "typo"
     static_content_path: str = "content"
 
-    db_user: Optional[str] = None
+    db_user: str | None = None
     db_connection_string: str = ""
-    db_secret: Optional[str] = None
-    db_secret_ocid: Optional[str] = None
+    db_secret: str | None = None
+    db_secret_ocid: str | None = None
 
     git_repo_url: str = ""
-    git_username: Optional[str] = None
-    git_password: Optional[str] = None
-    git_username_secret_ocid: Optional[str] = None
-    git_password_secret_ocid: Optional[str] = None
+    git_username: str | None = None
+    git_password: str | None = None
+    git_username_secret_ocid: str | None = None
+    git_password_secret_ocid: str | None = None
 
-    webhook_secret: Optional[str] = None
-    webhook_secret_ocid: Optional[str] = None
+    webhook_secret: str | None = None
+    webhook_secret_ocid: str | None = None
 
 
 settings = Settings()
